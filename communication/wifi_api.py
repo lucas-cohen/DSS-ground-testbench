@@ -22,6 +22,13 @@ def select_ports(ports, selected_idx):
     pass
 
 
+
+def write_read(x, robot):
+    robot.write(bytes(x, 'utf-8'))
+    time.sleep(0.05)
+    data_robot = robot.readline()
+    return data_robot
+
 def write_read_both(x):
     arduino.write(bytes(x, 'utf-8'))
     robot.write(bytes(x, 'utf-8'))
@@ -35,13 +42,13 @@ def wifi_write_read():
 
 def main():
     #arduino = serial.Serial(port='/dev/cu.usbmodem14601', baudrate=115200, timeout=.1)
-    robot = serial.Serial(port='/dev/cu.usbserial-A506NFKT', baudrate=115200, timeout=.1)
+    robot = serial.Serial(port='/dev/cu.usbserial-1410', baudrate=9600, timeout=.1) #/dev/cu.SLAB_USBtoUART #/dev/cu.usbserial-1410
     
-    # while True:
-    #     # num = input("Enter a number: ") # Taking input from user
-    #     # value_arduino, value_robot = write_read_both(num)
+    while True:
+        num = input("Enter a number: ") # Taking input from user
+        value_robot = write_read(num, robot)
         
-    #     # print(f"{value_arduino = }, \t {value_robot = }")
+        print(f"{value_robot = }")
         
         
     for port in get_ports():
