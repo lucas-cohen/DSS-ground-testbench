@@ -1,6 +1,9 @@
+#/usr/bin/env python3
+
 ### Importing Libraries ###
 
 # Importing Arduino serial comunication
+
 
 
 import serial
@@ -15,7 +18,7 @@ import time
 # TODO: Use actual bytes instead of chars to send data!
 
 # integers
-def int_to_bytes(x: int, set_bit_length=64) -> bytes:
+def int_to_bytes(x: int, set_bit_length=64) -> bytes : 
     return x.to_bytes((set_bit_length+7)//8, 'big', signed=True)
     
 def int_from_bytes(xbytes: bytes) -> int:
@@ -87,9 +90,9 @@ def write_str(data: str, ser):
 def stream_to(data_array, ser, debug=False):
     # Unpack all data
     x,y,z = data_array[0:3]
-    p,r,y = data_array[3:6]
+    #p,r,y = data_array[3:6]
     
-    generator = f"{x=}, {y=}, {p=}"                     # 2D gen
+    generator = f"{x},{y},{z}"                     # 2D gen
     #generator = f"{x=}, {y=}, {z=}, {y=}, {p=}, {r=}"  # 3D gen
     
     write_str(generator, ser)
@@ -99,31 +102,41 @@ def stream_to(data_array, ser, debug=False):
  
         
 def stream_from(ser, debug=False):
-    pass #TODO
+    raise NotImplementedError #TODO: Implement this
     
 
-    
+
+
+# Code for development
 
 def main():
     #arduino = serial.Serial(port='/dev/cu.usbmodem14601', baudrate=115200, timeout=.1)
-    print(get_ports_dict().items())
+    for port in get_ports():
+        print(port.device, port.description, port.name)
+
         
             
-    with open_serial('COM6') as robot_ser: #/dev/cu.SLAB_USBtoUART #/dev/cu.usbserial-1410
+    with open_serial('/dev/cu.usbserial-1410') as robot_ser: #/dev/cu.SLAB_USBtoUART #/dev/cu.usbserial-1410
 
         print(robot_ser.is_open) 
         time.sleep(0.5)
-        i = 1
+        i = 0
         
         while True:
-            multipliers = np.array([1,2,3,5,7,11])
+            #multipliers = np.array([1,2,3,5,7,11])
             # x,y,z,y,p,r = i*multipliers
             # data = f"{x=}, {y=}, {z=}, {y=}, {p=}, {r=}"
             
-            stream_to(i*multipliers, robot_ser, debug=True)
+            
+            write_str(str(i), robot_ser)
+            print(i)
+            #stream_to(i*multipliers, robot_ser, debug=True)
 
             time.sleep(0.1) # FIXME no waiting with sleep in final loop
+            
             i += 1
+            if i > 1:
+                i = 0
         
             
             # while has_recieved == False:
@@ -141,11 +154,7 @@ def main():
             # if data != None and data != "hello world":
             #     print(data)
             
-        
-        
 
-        
-    robot.close()
 
 if __name__ == "__main__":
     main()
