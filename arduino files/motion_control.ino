@@ -60,6 +60,8 @@ static void read_command_from_serial(){
     dir = remain.substring(0,del2_idx).toFloat();
     rot = remain.substring(del2_idx+1, incomingStr.length()-1).toFloat();
 
+    // DEBUG LED
+    digitalWrite(LED_BUILTIN, HIGH);
 //    //DEBUG
 //    Serial.print(spd);
 //    Serial.print(",");
@@ -80,6 +82,8 @@ static void timeout_overwrite(){
     spd = 0;
     dir = 0;
     rot = 0;
+
+    digitalWrite(LED_BUILTIN, LOW);
 
 //    // DEBUG
 //    Serial.print("Timeout: ");
