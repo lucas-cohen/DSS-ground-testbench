@@ -6,6 +6,7 @@
 
 
 
+from xml.dom import NotSupportedErr
 import serial
 import serial.tools.list_ports
 
@@ -63,10 +64,13 @@ def get_ports_dict(inc_lics=False):
 
 def open_serial(com_port, baud=9600, bytesize=8, timeout=0.05, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE):
     #FIXME: ensure ports get closed properly if crash!
+
     ser = serial.Serial(port=com_port, baudrate=baud, bytesize=bytesize, timeout=timeout, parity=parity, stopbits=stopbits)
     ser.rts = 0
-    
+
     return ser
+
+
 
 
 

@@ -43,7 +43,7 @@ def main():
         print(port,name)
     
     
-    device = Platform("Main", "/dev/cu.usbserial-1450")
+    device = Platform("Main", "/dev/cu.usbmodem14601")
     while True:
         device.test_motion()
     
