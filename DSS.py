@@ -4,9 +4,7 @@ import time
 from communication.wifi_api import open_serial, stream_to, get_ports_dict
 
 class Platform:    
-    def __init__(self, name:str, com_port:str, xpos:float=.0, ypos:float=.0, attitude:float=.0) -> None:
-         # TODO: MAKE INIT
-         # 
+    def __init__(self, name:str, com_port:str, xpos:float=.0, ypos:float=.0, attitude:float=.0, update_freq:float=0.1) -> None:
          self.name = name
          
          # position and orientation
@@ -16,23 +14,58 @@ class Platform:
          
          self.attitude   = attitude
          
+         # Motor settings
+         self.speed     = 0
+         self.direction = 0
+         self.rotation  = 0
+         
          # Create serial link to device
          self.com_port = com_port
          self.ser_com = open_serial(self.com_port)
+         
+         self.update_freq = update_freq
+         self.time_of_last_update = time.time()
     
-    def test_motion(self):
+    
+    def console_print(self, name, val):
+        print(f"{self.name}: {name}={val}")
+    
+    
+    def test_solo_motion(self):
         magnitude = 100.0
         dir_range = np.arange(0,2*np.pi, 4*np.pi/180)
         rotation = 0.0
 
         for direction in dir_range:
             data_to_send = [magnitude, direction, rotation]
-            stream_to(data_to_send, self.ser_com, debug=True)
-            time.sleep(0.1)
-
-
-
-
+            stream_to(data_to_send, self.ser_com, debug=False)
+            
+            self.console_print("data", data_to_send)
+            
+            time.sleep(0.1) #FIXME: dont use sleep!
+        
+        
+    def test_motion(self):
+        current_time = time.time()
+        delta_time = current_time - self.time_of_last_update
+        
+        if delta_time >= self.update_freq:
+            self.time_of_last_update = current_time
+            
+            # speed and rotation constant
+            self.speed = 100
+            self.rotation = 0   
+            turn_rate = 30*np.pi/180 #rads/s
+            
+            # direction changes gradually
+            self.direction += turn_rate*delta_time
+            if self.direction >= 2*np.pi: #reset direction once it gets too high
+                self.direction = self.direction - 2*np.pi
+            
+            data_to_send = [self.speed, self.direction, self.rotation]
+            stream_to(data_to_send, self.ser_com)
+            
+            self.console_print("data", data_to_send)
 
 
 
@@ -43,9 +76,16 @@ def main():
         print(port,name)
     
     
-    device = Platform("Main", "/dev/cu.usbmodem14601")
+    swarm_size = 2
+    selected_ports = ["/dev/cu.Bluetooth-Incoming-Port","/dev/cu.Bluetooth-Incoming-Port"]
+    swarm = [Platform(f"Robot-{i}", selected_ports[i]) for i in range(swarm_size)]
+    
+    # # Code for running a single robot
+    # device = Platform("Main", "/dev/cu.Bluetooth-Incoming-Port")
+    
     while True:
-        device.test_motion()
+        for device in swarm:
+            device.test_motion()
     
         
         

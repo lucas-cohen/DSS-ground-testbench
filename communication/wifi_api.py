@@ -3,9 +3,6 @@
 ### Importing Libraries ###
 
 # Importing Arduino serial comunication
-
-
-
 from xml.dom import NotSupportedErr
 import serial
 import serial.tools.list_ports
@@ -71,10 +68,6 @@ def open_serial(com_port, baud=9600, bytesize=8, timeout=0.05, parity=serial.PAR
     return ser
 
 
-
-
-
-
 # --- Read/Write ops ---
 
 def read(ser):
@@ -118,8 +111,6 @@ def main():
     for port in get_ports():
         print(port.device, port.description, port.name)
 
-        
-            
     with open_serial('/dev/cu.usbserial-1410') as robot_ser: #/dev/cu.SLAB_USBtoUART #/dev/cu.usbserial-1410
 
         print(robot_ser.is_open) 
@@ -130,8 +121,7 @@ def main():
             #multipliers = np.array([1,2,3,5,7,11])
             # x,y,z,y,p,r = i*multipliers
             # data = f"{x=}, {y=}, {z=}, {y=}, {p=}, {r=}"
-            
-            
+               
             write_str(str(i), robot_ser)
             print(i)
             #stream_to(i*multipliers, robot_ser, debug=True)
@@ -142,7 +132,6 @@ def main():
             if i > 1:
                 i = 0
         
-            
             # while has_recieved == False:
             #     recieved = read(robot_ser)
             #     if recieved != None:
@@ -151,8 +140,6 @@ def main():
             #         print(num)
             
             # has_recieved = False
-            
-            
             
             # data = read(robot_ser)
             # if data != None and data != "hello world":
