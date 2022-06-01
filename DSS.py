@@ -30,6 +30,8 @@ class Platform:
          
          self.update_freq = update_freq
          self.time_of_last_update = time.time()
+         
+         print(self.name, "on", self.com_port)
     
     
     def console_print(self, name, val):
@@ -80,16 +82,16 @@ def main():
         print(port,name)
     
     
-    formation_size = 2
-    selected_ports = ["/dev/cu.Bluetooth-Incoming-Port","/dev/cu.Bluetooth-Incoming-Port"]
-    formation = [Platform(f"Robot-{i}", selected_ports[i]) for i in range(swarm_size)]
+    selected_ports = ["/dev/cu.usbserial-1440"]#, "/dev/cu.usbserial-1410"]
+    formation_size = len(selected_ports)
+    formation = [Platform(f"Robot-{i+1}", selected_ports[i]) for i in range(formation_size)]
     
     # # Code for running a single robot
     # device = Platform("Main", "/dev/cu.Bluetooth-Incoming-Port")
     
     while True:
-        for device in formation:
-            device.test_motion()
+        formation[0].test_motion() #ROBOT 1
+        #formation[1].test_motion() #ROBOT 2
     
         
         
