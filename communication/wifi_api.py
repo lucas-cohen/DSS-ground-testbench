@@ -3,7 +3,6 @@
 ### Importing Libraries ###
 
 # Importing Arduino serial comunication
-from xml.dom import NotSupportedErr
 import serial
 import serial.tools.list_ports
 
@@ -38,7 +37,6 @@ def float_from_bytes(xbytes: bytes) -> float:
 
 
 # --- Port information & management ---
-
 def get_ports(inc_lics=False):
     """Get availabe serial ports in list of PortInfo object.
     Args:
@@ -64,12 +62,12 @@ def open_serial(com_port, baud=9600, bytesize=8, timeout=0.05, parity=serial.PAR
 
     ser = serial.Serial(port=com_port, baudrate=baud, bytesize=bytesize, timeout=timeout, parity=parity, stopbits=stopbits)
     ser.rts = 0
+    time.sleep(0.1) # Delay to ensure connection is established
 
     return ser
 
 
 # --- Read/Write ops ---
-
 def read(ser):
     while ser.in_waiting > 0:
         recieved_bytes = ser.readline()
@@ -85,12 +83,9 @@ def write_str(data: str, ser):
 
     
 def stream_to(data_array, ser, debug=False):
-    # Unpack all data
     x,y,z = data_array[0:3]
-    #p,r,y = data_array[3:6]
-    
-    generator = f"{x},{y},{z}"                     # 2D gen
-    #generator = f"{x=}, {y=}, {z=}, {y=}, {p=}, {r=}"  # 3D gen
+    generator = f"{x},{y},{z}"                    # 2D gen
+    #generator = f"{x}, {y}, {z}, {y}, {p}, {r}"   # 3D gen
     
     write_str(generator, ser)
     
@@ -105,7 +100,6 @@ def stream_from(ser, debug=False):
 
 
 # Code for development
-
 def main():
     #arduino = serial.Serial(port='/dev/cu.usbmodem14601', baudrate=115200, timeout=.1)
     for port in get_ports():

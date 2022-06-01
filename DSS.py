@@ -1,7 +1,12 @@
+#/usr/bin/env python3
+
 import numpy as np
 import time
 
 from communication.wifi_api import open_serial, stream_to, get_ports_dict
+from control.default_dynamics import relative_motion_demo
+#from communication.motive_api import <functions> #TODO!
+
 
 class Platform:    
     def __init__(self, name:str, com_port:str, xpos:float=.0, ypos:float=.0, attitude:float=.0, update_freq:float=0.1) -> None:
@@ -43,7 +48,7 @@ class Platform:
             self.console_print("data", data_to_send)
             
             time.sleep(0.1) #FIXME: dont use sleep!
-        
+         
         
     def test_motion(self):
         current_time = time.time()
@@ -55,7 +60,7 @@ class Platform:
             # speed and rotation constant
             self.speed = 100
             self.rotation = 0   
-            turn_rate = 30*np.pi/180 #rads/s
+            turn_rate = 30*np.pi/180 #rads/sj
             
             # direction changes gradually
             self.direction += turn_rate*delta_time
@@ -66,7 +71,6 @@ class Platform:
             stream_to(data_to_send, self.ser_com)
             
             self.console_print("data", data_to_send)
-
 
 
 # code execution for this file        
