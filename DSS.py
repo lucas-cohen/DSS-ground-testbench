@@ -80,15 +80,15 @@ def main():
         print(port,name)
     
     
-    swarm_size = 2
+    formation_size = 2
     selected_ports = ["/dev/cu.Bluetooth-Incoming-Port","/dev/cu.Bluetooth-Incoming-Port"]
-    swarm = [Platform(f"Robot-{i}", selected_ports[i]) for i in range(swarm_size)]
+    formation = [Platform(f"Robot-{i}", selected_ports[i]) for i in range(swarm_size)]
     
     # # Code for running a single robot
     # device = Platform("Main", "/dev/cu.Bluetooth-Incoming-Port")
     
     while True:
-        for device in swarm:
+        for device in formation:
             device.test_motion()
     
         
