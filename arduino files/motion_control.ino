@@ -38,6 +38,8 @@ String incomingStr;
 int del1_idx;
 int del2_idx;
 
+bool has_timeout = true;
+
 // watchdogs
 unsigned long max_time_between_updates = 250; //Evey 250ms a update must be recieved.
 unsigned long time_since_last_update = millis(); 
@@ -73,7 +75,7 @@ static void read_command_from_serial(){
 }
 
 
-static void timeout_overwrite(){
+bool timeout_overwrite(){
   current_time = millis();
 
   // in case no new data has been recieved for longer than max_time_between_updates
@@ -84,6 +86,9 @@ static void timeout_overwrite(){
     rot = 0;
 
     digitalWrite(LED_BUILTIN, LOW);
+
+    return true
+  return false
 
 //    // DEBUG
 //    Serial.print("Timeout: ");
@@ -114,9 +119,13 @@ void setup() {
 void loop() {
   // Set target variables
   read_command_from_serial();
-  timeout_overwrite();
+  has_timeout = timeout_overwrite();
 
   // control motors based on variables
-  Omni.setCarMove(spd, dir, rot);
-  Omni.delayMS(motor_delta_time);
+  if (has_timeout == true){
+    Omni.setCarMove(spd, dir, rot);
+    Omni.delayMS(motor_delta_time);
+  } else{
+    Omni.setCarStop()
+  }
 }

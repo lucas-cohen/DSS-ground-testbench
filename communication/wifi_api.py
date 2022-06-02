@@ -105,7 +105,7 @@ def main():
     for port in get_ports():
         print(port.device, port.description, port.name)
 
-    with open_serial('/dev/cu.usbserial-1410') as robot_ser: #/dev/cu.SLAB_USBtoUART #/dev/cu.usbserial-1410
+    with open_serial('/dev/cu.usbserial-1440') as robot_ser: #/dev/cu.SLAB_USBtoUART #/dev/cu.usbserial-1410
 
         print(robot_ser.is_open) 
         time.sleep(0.5)
