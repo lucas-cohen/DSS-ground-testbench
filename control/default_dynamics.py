@@ -1,23 +1,37 @@
 #/usr/bin/env python3
 
 import numpy as np
+import time
 
 
 class dynamics():
-    def __init__(self, motion_generator_function):
+    def __init__(self, devices):
         
-        # Prepaked dynamics
-        time_set, x_pos, y_pos, a_set = motion_generator_function()
         
-        self.time_set = time_set
-        self.xpos_set = x_pos
-        self.ypos_set = y_pos
-        self.attitude_set = a_set
+        self.devices = devices
+        self.N = len(self.devices)
+        
+        self.positions = np.zeros((2,N))
+        
+        
+        # Time
+        current_time = time.time
+        self.time_of_last_update = current_time
+        
+        
+    def update(time):
+        pass
+        
         
         # TODO: adapt function for relatice control (aka state_(n) --> state_(n+1))
     
-    def get_plot_data(self, fig, ax):
+    def compute(time):
+        pass
         
+    
+    
+    def get_plot_data(self, fig, ax):
+        pass
         # TODO: Precompute the behaviour (ideal)
         # TODO: store resulting arrays
         
@@ -25,10 +39,31 @@ class dynamics():
 
         
     
+    
 
 
-
-
+def circle_around_point(point_pos, point_vel, time, radius, period, initial_time=0, initial_angle=0):
+    center_px, center_py = point_pos
+    center_vx, center_vy = point_vel
+    
+    rate = (2*np.pi)/period
+    delta_time = (time-initial_time)
+    
+    # Position calculation
+    pos_x = center_px + radius * np.cos(rate*delta_time)
+    pos_y = center_py + radius * np.sin(rate*delta_time)
+    
+    # velocity calculation
+    vel_x = center_vx - rate*radius*np.sin(rate * delta_time)
+    vel_y = center_vy + rate*radius*np.cos(rate * delta_time)
+    
+    return pos_x, pos_y, vel_x, vel_y
+    
+    
+    
+    
+    
+    
 
 
 def circle_motion(T=8.0, R=0.20, dt=0.1):
@@ -41,6 +76,15 @@ def circle_motion(T=8.0, R=0.20, dt=0.1):
     return time_set, x_pos, y_pos, a_set
     
 
-def relative_motion_demo():
-    raise NotImplementedError
+
+
+def main():
+    pass
+    
+
+if __name__ == "__main__":
+    main()
+ 
+ 
+ 
  
