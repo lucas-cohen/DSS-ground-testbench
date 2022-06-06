@@ -3,6 +3,34 @@
 import numpy as np
 
 
+class dynamics():
+    def __init__(self, motion_generator_function):
+        
+        # Prepaked dynamics
+        time_set, x_pos, y_pos, a_set = motion_generator_function()
+        
+        self.time_set = time_set
+        self.xpos_set = x_pos
+        self.ypos_set = y_pos
+        self.attitude_set = a_set
+        
+        # TODO: adapt function for relatice control (aka state_(n) --> state_(n+1))
+    
+    def get_plot_data(self, fig, ax):
+        
+        # TODO: Precompute the behaviour (ideal)
+        # TODO: store resulting arrays
+        
+        # plot results nicely
+
+        
+    
+
+
+
+
+
+
 def circle_motion(T=8.0, R=0.20, dt=0.1):
     
     time_set = np.arange(0,T,dt)
