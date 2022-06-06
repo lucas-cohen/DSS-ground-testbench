@@ -59,11 +59,6 @@ def circle_around_point(point_pos, point_vel, time, radius, period, initial_time
     
     return pos_x, pos_y, vel_x, vel_y
     
-    
-    
-    
-    
-    
 
 
 def circle_motion(T=8.0, R=0.20, dt=0.1):
