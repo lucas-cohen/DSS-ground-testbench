@@ -7,6 +7,10 @@ from communication.wifi_api import open_serial, stream_to, get_ports_dict
 from control.default_dynamics import circle_motion
 #from communication.motive_api import <functions> #TODO!
 
+    """
+    TEST
+    """
+
 
 class Platform:    
     def __init__(self, name:str, com_port:str, xpos:float=.0, ypos:float=.0, attitude:float=.0, update_freq:float=0.1, debug=False) -> None:
