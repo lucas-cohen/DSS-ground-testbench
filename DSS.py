@@ -3,17 +3,17 @@
 import numpy as np
 import time
 
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+
 from communication.wifi_api import open_serial, stream_to, get_ports_dict
-from control.default_dynamics import circle_motion
+from control.default_dynamics import circle_motion, swarm_circle
 #from communication.motive_api import <functions> #TODO!
 
-    """
-    TEST
-    """
 
 
 class Platform:    
-    def __init__(self, name:str, com_port:str, xpos:float=.0, ypos:float=.0, attitude:float=.0, update_freq:float=0.1, debug=False) -> None:
+    def __init__(self, name:str, idx, com_port:str, xpos:float=.0, ypos:float=.0, attitude:float=.0, update_freq:float=0.1, debug=False) -> None:
          self.name = name
          
          # position and orientation
@@ -37,6 +37,7 @@ class Platform:
          self.debug = debug
          
          self.temp_loop_idx = 0
+         self.robot_idx = idx
          
          print(self.name, "on", self.com_port)
     
@@ -84,7 +85,7 @@ class Platform:
     
     def start_motion(self, dynamics, repeat=False):
 
-        time_set,x_set,y_set,a_set = dynamics()
+        time_set,x_set,y_set,a_set = dynamics()[self.robot_idx]
             
         current_time = time.time()
         delta_time = current_time - self.time_of_last_update
@@ -144,28 +145,108 @@ class Platform:
     
 
 # code execution for this file        
-def main():
+def main(plotting=False):
     # create robots
     for port,name in get_ports_dict().items():
         print(port,name)
     
-    
-    selected_ports = ["/dev/cu.usbserial-141110", "/dev/cu.usbserial-141140"]
+    selected_ports = ["/dev/cu.Bluetooth-Incoming-Port", "/dev/cu.usbserial-1440"]
     formation_size = len(selected_ports)
-    formation = [Platform(f"Robot-{i+1}", selected_ports[i], debug=True) for i in range(formation_size)]
-    _, x,y,a, = circle_motion()
+    formation = [Platform(f"Robot-{i+1}", i, selected_ports[i], debug=True) for i in range(formation_size)]
+    _, x,y,a, = swarm_circle()[0]
     x0,y0,a0, = x[0],y[0],a[0]
         
     formation[0].initalise_position(x0, y0,a0)
+    
+    _, x,y,a, = swarm_circle()[1]
+    x0,y0,a0, = x[0],y[0],a[0]
+    
     formation[1].initalise_position(x0, y0,a0)
     
-    while True:
-        
+    
+    
+    #plotting stuff
+    fig, ax = plt.subplots()
 
+    xdata1, ydata1 = [], []
+    xdata2, ydata2 = [], []
+
+    ln1,   = plt.plot([], [], 'k-', alpha=0.5)
+    mark1, = plt.plot([], [], 'ro', label="Robot 1")
+    vec1  = plt.quiver([],[],[],[], width=5e-3)
+
+    ln2,   = plt.plot([], [], 'k-', alpha=0.5)
+    mark2, = plt.plot([], [], 'bo', label="Robot 2")
+    vec2  = plt.quiver([],[],[],[], width=5e-3)
+
+    vecRel = plt.quiver([],[],[],[], width=5e-3)
+    lnRel,   = plt.plot([], [], 'k:', alpha=0.5)
+
+    time_disp = plt.text(-1.45,-1.45,"", fontsize=11) 
+
+    presist_on_repeat = False
+    
+    def init():
+        ax.set_xlim(-1.5,1.5)
+        ax.set_ylim(-1.5, 1.5)
+        ax.legend()
+        ax.set_aspect('equal')
+        return ln1,mark1,ln2,mark2,vec1,vec2,vecRel,lnRel,time_disp
+
+    def update(frame):
+        global xdata1, ydata1
+        global xdata2, ydata2
         
+        # reset on repeat:
+        if frame == 0.0 and not presist_on_repeat:
+            xdata1, ydata1 = [], []
+            xdata2, ydata2 = [], []
+
+        # Motion particle 1
+        pos1x, pos1y = formation[0].xpos, formation[0].ypos
         
-        formation[0].start_motion(circle_motion, repeat=True)
-        formation[1].start_motion(circle_motion, repeat=True)
+        xdata1.append(pos1x)
+        ydata1.append(pos1y)
+        ln1.set_data(xdata1, ydata1)
+        mark1.set_data(pos1x, pos1y)
+        
+        # Motion particle 2
+        pos2x, pos2y = formation[1].xpos, formation[1].ypos
+
+        xdata2.append(pos2x)
+        ydata2.append(pos2y)
+        
+        ln2.set_data(xdata2, ydata2)
+        mark2.set_data(pos2x, pos2y)
+        
+        lnRel.set_data([pos1x, pos2x], [pos1y, pos2y])
+        
+    
+        return ln1,mark1,ln2,mark2,vec1,vec2,vecRel,lnRel,time_disp
+    
+    if plotting:
+        ani = FuncAnimation(fig, update, init_func=init, blit=True, interval=50, repeat_delay=0)
+        plt.show(block=False)
+    
+    
+    
+    
+    
+    
+    
+    while True:
+        formation[0].start_motion(swarm_circle, repeat=True)
+        formation[1].start_motion(swarm_circle, repeat=True)
+        
+        if plotting:
+            plt.pause(1e-12)
+    
+    
+    
+    
+        
+if __name__ == "__main__":
+    main(False)
      
         # formation[0].test_command(120) #ROBOT 1
         # formation[1].test_command(120) #ROBOT 2
@@ -197,5 +278,3 @@ def main():
 
     
 
-if __name__ == "__main__":
-    main()
