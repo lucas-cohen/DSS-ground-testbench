@@ -60,7 +60,7 @@ def circle_around_point(point_pos, point_vel, time, radius, period, initial_time
     return pos_x, pos_y, vel_x, vel_y
     
 
-def swarm_circle(f1=1, f2=3, R1=0.4, R2=0.7, P=100, dt=0.1):
+def swarm_circle(f1=1, f2=3, R1=0.5, R2=1, P=80, dt=0.1):
     gcd = np.gcd(f1,f2)
     end_time = gcd*P
     
@@ -70,9 +70,9 @@ def swarm_circle(f1=1, f2=3, R1=0.4, R2=0.7, P=100, dt=0.1):
     pos2x, pos2y, dir2x, dir2y = circle_around_point([pos1x, pos1y], [dir1x, dir1y], time_set, R2, P/f2)
     
     relx, rely = pos1x - pos2x, pos1y - pos2y
-    dir2_to_1 = np.zeros(np.shape(pos1x)) #np.arctan2(relx, rely)
-    
-    dir_robot_1 = np.zeros(np.shape(pos1x))  # np.arctan2(dir1x, dir1y)
+    dir2_to_1 = (np.arctan2(relx, rely) + np.pi)
+
+    dir_robot_1 = (np.arctan2(-relx, -rely) + np.pi)
     
     set_1 = [time_set, pos1x, pos1y, dir_robot_1]
     set_2 = [time_set, pos2x, pos2y, dir2_to_1]

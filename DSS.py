@@ -95,11 +95,11 @@ class Platform:
         
             dx = x_set[self.temp_loop_idx] - self.xpos
             dy = y_set[self.temp_loop_idx] - self.ypos
-            da = (a_set[self.temp_loop_idx] - self.attitude)%(2*np.pi)
+            da = (a_set[self.temp_loop_idx] - self.attitude)
             dt = delta_time
+
             
-            
-            required_direction  = np.arctan2(dx, dy) + np.pi/2 - self.attitude
+            required_direction  = (np.arctan2(dx, dy) + np.pi/2 - self.attitude) % (2*np.pi)
             required_speed      = np.sqrt(dx**2 + dy**2)/dt * 1e3
             required_rotation   = da/dt
             
@@ -150,9 +150,10 @@ def main(plotting=False):
     for port,name in get_ports_dict().items():
         print(port,name)
     
-    selected_ports = ["/dev/cu.Bluetooth-Incoming-Port", "/dev/cu.usbserial-1440"]
+    selected_ports = ["COM4", "COM3"]
     formation_size = len(selected_ports)
     formation = [Platform(f"Robot-{i+1}", i, selected_ports[i], debug=True) for i in range(formation_size)]
+    
     _, x,y,a, = swarm_circle()[0]
     x0,y0,a0, = x[0],y[0],a[0]
         
@@ -246,7 +247,7 @@ def main(plotting=False):
     
         
 if __name__ == "__main__":
-    main(False)
+    main(True)
      
         # formation[0].test_command(120) #ROBOT 1
         # formation[1].test_command(120) #ROBOT 2
