@@ -32,6 +32,8 @@ class Platform:
          self.time_of_last_update = time.time()
          self.debug = debug
          
+         self.temp_loop_idx = 0
+         
          print(self.name, "on", self.com_port)
     
     
@@ -79,55 +81,45 @@ class Platform:
     def start_motion(self, dynamics, repeat=False):
 
         time_set,x_set,y_set,a_set = dynamics()
-        
-        # set intital position
-        self.xpos = x_set[0]
-        self.ypos = y_set[0]
-        
-        
-        start_time = time.time()
-        i = 0        
-        while i < len(time_set):
             
-            current_time = time.time()
-            delta_time = current_time - self.time_of_last_update
+        current_time = time.time()
+        delta_time = current_time - self.time_of_last_update
 
-            if delta_time >= self.update_freq:
-                self.time_of_last_update = current_time
-            
-                dx = x_set[i] - self.xpos
-                dy = y_set[i] - self.ypos
-                da = (a_set[i] - self.attitude)%(2*np.pi)
-                dt = self.update_freq
-                
-                print(dx, dy, da)
-                
-                required_direction  = np.arctan2(dx, dy) + np.pi/2 - self.attitude
-                required_speed      = np.sqrt(dx**2 + dy**2)/dt * 1e3
-                required_rotation   = da/dt
-                
-                data_to_send = [required_speed, required_direction, required_rotation]
-                
-                stream_to(data_to_send, self.ser_com)
-                #self.console_print("data", data_to_send)
-                
-                
-                # hardcoding succes of motion
-                self.xpos    = x_set[i]
-                self.ypos    = y_set[i]
-                self.attitude = a_set[i]
-                
-                if i == len(time_set)-1:
-                    i =0
-                else:
-                    i += 1
-                
-                
-            
-                
+        if delta_time >= self.update_freq:
+            self.time_of_last_update = current_time
+        
+            dx = x_set[self.temp_loop_idx] - self.xpos
+            dy = y_set[self.temp_loop_idx] - self.ypos
+            da = (a_set[self.temp_loop_idx] - self.attitude)%(2*np.pi)
+            dt = delta_time
             
             
+            required_direction  = np.arctan2(dx, dy) + np.pi/2 - self.attitude
+            required_speed      = np.sqrt(dx**2 + dy**2)/dt * 1e3
+            required_rotation   = da/dt
             
+            data_to_send = [required_speed, required_direction, required_rotation]
+            
+            stream_to(data_to_send, self.ser_com)
+            self.console_print("data", data_to_send)
+            
+            # hardcoding succes of motion
+            self.xpos    = x_set[self.temp_loop_idx]
+            self.ypos    = y_set[self.temp_loop_idx]
+            self.attitude = a_set[self.temp_loop_idx]
+            
+            if self.temp_loop_idx == len(time_set)-1:
+                self.temp_loop_idx = 0
+            else:
+                self.temp_loop_idx += 1
+                
+                
+    def initalise_position(self, xpos,ypos,attitude):     
+        self.xpos     = xpos
+        self.ypos     = ypos
+        self.attitude = attitude
+        
+        self.console_print("Position initialize at: pos=", [ self.xpos, self.ypos, self.attitude])
             
             
     
@@ -154,12 +146,25 @@ def main():
         print(port,name)
     
     
-    selected_ports = ["/dev/cu.usbserial-1460"]#, "/dev/cu.usbserial-1440"]
+    selected_ports = ["/dev/cu.usbserial-141110", "/dev/cu.usbserial-141140"]
     formation_size = len(selected_ports)
     formation = [Platform(f"Robot-{i+1}", selected_ports[i], debug=True) for i in range(formation_size)]
+    _, x,y,a, = circle_motion()
+    x0,y0,a0, = x[0],y[0],a[0]
+        
+    formation[0].initalise_position(x0, y0,a0)
+    formation[1].initalise_position(x0, y0,a0)
     
-    
-    formation[0].start_motion(circle_motion, repeat=True)
+    while True:
+        
+
+        
+        
+        formation[0].start_motion(circle_motion, repeat=True)
+        formation[1].start_motion(circle_motion, repeat=True)
+     
+        # formation[0].test_command(120) #ROBOT 1
+        # formation[1].test_command(120) #ROBOT 2
     
     
     # # Code for running a single robot

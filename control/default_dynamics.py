@@ -61,7 +61,7 @@ def circle_around_point(point_pos, point_vel, time, radius, period, initial_time
     
 
 
-def circle_motion(T=8.0, R=0.20, dt=0.1):
+def circle_motion(T=6.0, R=0.25, dt=0.1):
     
     time_set = np.arange(0,T,dt)
     x_pos = R*np.cos(time_set * 2*np.pi/T)
