@@ -30,7 +30,7 @@ float dir;
 float rot;
 
 // Update freqency
-int motor_delta_time = 50;
+int motor_delta_time = 20;
 int serial_timeout = 10;
 
 // Serial read buffer variables  (TODO: use list of floats and iterative sequency instead)

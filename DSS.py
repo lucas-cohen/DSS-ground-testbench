@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 from communication.wifi_api import open_serial, stream_to, get_ports_dict
-from control.default_dynamics import circle_motion, swarm_circle
+from control.default_dynamics import circle_motion, swarm_circle, calibrate_directions
 #from communication.motive_api import <functions> #TODO!
 
 
@@ -40,7 +40,7 @@ class Platform:
          self.robot_idx = idx
          
          print(self.name, "on", self.com_port)
-    
+
     
     def console_print(self, name, val):
         if self.debug:
@@ -85,20 +85,27 @@ class Platform:
     
     def start_motion(self, dynamics, repeat=False):
 
-        time_set,x_set,y_set,a_set = dynamics()[self.robot_idx]
+        time_set,x_set,y_set,a_set = dynamics(dt=self.update_freq)[self.robot_idx]
             
         current_time = time.time()
         delta_time = current_time - self.time_of_last_update
+        
 
         if delta_time >= self.update_freq:
             self.time_of_last_update = current_time
         
             dx = x_set[self.temp_loop_idx] - self.xpos
+            
             dy = y_set[self.temp_loop_idx] - self.ypos
-            da = (a_set[self.temp_loop_idx] - self.attitude)
+            
+            da_raw = (a_set[self.temp_loop_idx] - self.attitude)
+            if abs(da_raw) > np.pi:
+                da = (da_raw - np.sign(da_raw)*2*np.pi)%(2*np.pi)
+            else:
+                da = da_raw
+            
             dt = delta_time
 
-            
             required_direction  = (np.arctan2(dx, dy) + np.pi/2 - self.attitude) % (2*np.pi)
             required_speed      = np.sqrt(dx**2 + dy**2)/dt * 1e3
             required_rotation   = da/dt
@@ -109,8 +116,8 @@ class Platform:
             self.console_print("data", data_to_send)
             
             # hardcoding succes of motion
-            self.xpos    = x_set[self.temp_loop_idx]
-            self.ypos    = y_set[self.temp_loop_idx]
+            self.xpos     = x_set[self.temp_loop_idx]
+            self.ypos     = y_set[self.temp_loop_idx]
             self.attitude = a_set[self.temp_loop_idx]
             
             if self.temp_loop_idx == len(time_set)-1:
@@ -150,9 +157,11 @@ def main(plotting=False):
     for port,name in get_ports_dict().items():
         print(port,name)
     
-    selected_ports = ["COM4", "COM3"]
+    selected_ports = ["/dev/cu.usbserial-1410", "/dev/cu.usbserial-1440"]
     formation_size = len(selected_ports)
     formation = [Platform(f"Robot-{i+1}", i, selected_ports[i], debug=True) for i in range(formation_size)]
+    
+    #formation[0].debug = False
     
     _, x,y,a, = swarm_circle()[0]
     x0,y0,a0, = x[0],y[0],a[0]
@@ -166,64 +175,64 @@ def main(plotting=False):
     
     
     
-    #plotting stuff
-    fig, ax = plt.subplots()
+    # #plotting stuff
+    # fig, ax = plt.subplots()
 
-    xdata1, ydata1 = [], []
-    xdata2, ydata2 = [], []
+    # xdata1, ydata1 = [], []
+    # xdata2, ydata2 = [], []
 
-    ln1,   = plt.plot([], [], 'k-', alpha=0.5)
-    mark1, = plt.plot([], [], 'ro', label="Robot 1")
-    vec1  = plt.quiver([],[],[],[], width=5e-3)
+    # ln1,   = plt.plot([], [], 'k-', alpha=0.5)
+    # mark1, = plt.plot([], [], 'ro', label="Robot 1")
+    # vec1  = plt.quiver([],[],[],[], width=5e-3)
 
-    ln2,   = plt.plot([], [], 'k-', alpha=0.5)
-    mark2, = plt.plot([], [], 'bo', label="Robot 2")
-    vec2  = plt.quiver([],[],[],[], width=5e-3)
+    # ln2,   = plt.plot([], [], 'k-', alpha=0.5)
+    # mark2, = plt.plot([], [], 'bo', label="Robot 2")
+    # vec2  = plt.quiver([],[],[],[], width=5e-3)
 
-    vecRel = plt.quiver([],[],[],[], width=5e-3)
-    lnRel,   = plt.plot([], [], 'k:', alpha=0.5)
+    # vecRel = plt.quiver([],[],[],[], width=5e-3)
+    # lnRel,   = plt.plot([], [], 'k:', alpha=0.5)
 
-    time_disp = plt.text(-1.45,-1.45,"", fontsize=11) 
+    # time_disp = plt.text(-1.45,-1.45,"", fontsize=11) 
 
-    presist_on_repeat = False
+    # presist_on_repeat = False
     
-    def init():
-        ax.set_xlim(-1.5,1.5)
-        ax.set_ylim(-1.5, 1.5)
-        ax.legend()
-        ax.set_aspect('equal')
-        return ln1,mark1,ln2,mark2,vec1,vec2,vecRel,lnRel,time_disp
+    # def init():
+    #     ax.set_xlim(-1.5,1.5)
+    #     ax.set_ylim(-1.5, 1.5)
+    #     ax.legend()
+    #     ax.set_aspect('equal')
+    #     return ln1,mark1,ln2,mark2,vec1,vec2,vecRel,lnRel,time_disp
 
-    def update(frame):
-        global xdata1, ydata1
-        global xdata2, ydata2
+    # def update(frame):
+    #     global xdata1, ydata1
+    #     global xdata2, ydata2
         
-        # reset on repeat:
-        if frame == 0.0 and not presist_on_repeat:
-            xdata1, ydata1 = [], []
-            xdata2, ydata2 = [], []
+    #     # reset on repeat:
+    #     if frame == 0.0 and not presist_on_repeat:
+    #         xdata1, ydata1 = [], []
+    #         xdata2, ydata2 = [], []
 
-        # Motion particle 1
-        pos1x, pos1y = formation[0].xpos, formation[0].ypos
+    #     # Motion particle 1
+    #     pos1x, pos1y = formation[0].xpos, formation[0].ypos
         
-        xdata1.append(pos1x)
-        ydata1.append(pos1y)
-        ln1.set_data(xdata1, ydata1)
-        mark1.set_data(pos1x, pos1y)
+    #     xdata1.append(pos1x)
+    #     ydata1.append(pos1y)
+    #     ln1.set_data(xdata1, ydata1)
+    #     mark1.set_data(pos1x, pos1y)
         
-        # Motion particle 2
-        pos2x, pos2y = formation[1].xpos, formation[1].ypos
+    #     # Motion particle 2
+    #     pos2x, pos2y = formation[1].xpos, formation[1].ypos
 
-        xdata2.append(pos2x)
-        ydata2.append(pos2y)
+    #     xdata2.append(pos2x)
+    #     ydata2.append(pos2y)
         
-        ln2.set_data(xdata2, ydata2)
-        mark2.set_data(pos2x, pos2y)
+    #     ln2.set_data(xdata2, ydata2)
+    #     mark2.set_data(pos2x, pos2y)
         
-        lnRel.set_data([pos1x, pos2x], [pos1y, pos2y])
+    #     lnRel.set_data([pos1x, pos2x], [pos1y, pos2y])
         
     
-        return ln1,mark1,ln2,mark2,vec1,vec2,vecRel,lnRel,time_disp
+    #     return ln1,mark1,ln2,mark2,vec1,vec2,vecRel,lnRel,time_disp
     
     if plotting:
         ani = FuncAnimation(fig, update, init_func=init, blit=True, interval=50, repeat_delay=0)
@@ -236,8 +245,11 @@ def main(plotting=False):
     
     
     while True:
-        formation[0].start_motion(swarm_circle, repeat=True)
-        formation[1].start_motion(swarm_circle, repeat=True)
+        
+        formation[0].start_motion(calibrate_directions, repeat=True)
+        formation[1].start_motion(calibrate_directions, repeat=True) 
+        # formation[0].start_motion(swarm_circle, repeat=True)
+        # formation[1].start_motion(swarm_circle, repeat=True)
         
         if plotting:
             plt.pause(1e-12)
@@ -247,7 +259,7 @@ def main(plotting=False):
     
         
 if __name__ == "__main__":
-    main(True)
+    main(False)
      
         # formation[0].test_command(120) #ROBOT 1
         # formation[1].test_command(120) #ROBOT 2

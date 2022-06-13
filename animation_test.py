@@ -23,8 +23,8 @@ lnRel,   = plt.plot([], [], 'k:', alpha=0.5)
 time_disp = plt.text(-1.45,-1.45,"", fontsize=11) 
 
 presist_on_repeat = False
-f1, f2 = 2,5
-R1, R2 = 0.7, 0.5
+f1, f2 = 1,2
+R1, R2 = 0.35, 0.3
 
 gcd = np.gcd(f1,f2)
 
