@@ -4,6 +4,20 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt
 
+
+
+def transform_frame(data, transform=[0,0,0]):
+    t_data, x_data, y_data, a_data = data
+    dx, dy, da = transform
+    
+    x_transformed = x_data + dx
+    y_transformed = y_data + dy
+    a_transform = a_data + da # check if behaving
+    
+    return t_data, x_transformed, y_transformed, a_transform
+    
+    
+
 def circle_around_point(point_pos, point_vel, time, radius, period, sign=1, initial_time=0, initial_angle=0):
     center_px, center_py = point_pos
     center_vx, center_vy = point_vel
@@ -42,7 +56,7 @@ def swarm_circle(f1=1, f2=2, R1=0.15, R2=0.65, P=60, dt=0.1):
     return set_1, set_2
 
 
-def calibrate_directions(size = 0.25, seq_time=1, dt=0.1):
+def calibrate_directions(size = 0.25, seq_time=1.5, dt=0.1):
     
     seq_dir = [0*np.pi, 0.5*np.pi, 1.0*np.pi, 1.5*np.pi]
     N = len(seq_dir)
