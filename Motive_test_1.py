@@ -1,17 +1,35 @@
-# Import the OptiTrack NatNet direct depacketization library for Python
+#Copyright © 2018 Naturalpoint
+#
+#Licensed under the Apache License, Version 2.0 (the "License")
+#you may not use this file except in compliance with the License.
+#You may obtain a copy of the License at
+#
+#http://www.apache.org/licenses/LICENSE-2.0
+#
+#Unless required by applicable law or agreed to in writing, software
+#distributed under the License is distributed on an "AS IS" BASIS,
+#WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#See the License for the specific language governing permissions and
+#limitations under the License.
+
+
+# OptiTrack NatNet direct depacketization sample for Python 3.x
+#
+# Uses the Python NatNetClient.py library to establish a connection (by creating a NatNetClient),
+# and receive data via a NatNet connection and decode it using the NatNetClient library.
+
 import sys
 import time
 from NatNetClient import NatNetClient
 import DataDescriptions
 import MoCapData
-sys.stdout.flush()
+
 # This is a callback function that gets connected to the NatNet client
 # and called once per mocap frame.
 def receive_new_frame(data_dict):
     order_list=[ "frameNumber", "markerSetCount", "unlabeledMarkersCount", "rigidBodyCount", "skeletonCount",
                 "labeledMarkerCount", "timecode", "timecodeSub", "timestamp", "isRecording", "trackedModelsChanged" ]
-# changed False to True:
-    dump_args = True
+    dump_args = False
     if dump_args == True:
         out_string = "    "
         for key in data_dict:
@@ -23,11 +41,8 @@ def receive_new_frame(data_dict):
 
 # This is a callback function that gets connected to the NatNet client. It is called once per rigid body per frame
 def receive_rigid_body_frame( new_id, position, rotation ):
-    #pass
-    #print( "Received frame for rigid body", new_id )
-    print( "Received frame for rigid body", new_id," ",position," ",rotation , flush=True )
-    return
-
+    print( "Received frame for rigid body", new_id )
+    print( "Received frame for rigid body", new_id," ",position," ",rotation )
 
 
 def add_lists(totals, totals_tmp):
@@ -102,10 +117,6 @@ def request_data_descriptions(s_client):
     # Request the model definitions
     s_client.send_request(s_client.command_socket, s_client.NAT_REQUEST_MODELDEF,    "",  (s_client.server_ip_address, s_client.command_port) )
 
-def get_body_data(s_client):
-    s_client.send_request(s_client.command_socket, s_client.NAT_FRAMEOFDATA,    " ",  (s_client.server_ip_address, s_client.command_port) )
-
-
 def test_classes():
     totals = [0,0,0]
     print("Test Data Description Classes")
@@ -137,45 +148,29 @@ def my_parse_args(arg_list, args_dict):
 
     return args_dict
 
+
 if __name__ == "__main__":
 
-    # This will create a dictionary containing your connection settings
-    # multicast "192.168.209.128"
-    # Client  "239.255.42.99"
     optionsDict = {}
     optionsDict["clientAddress"] = "145.94.177.206"
-#    optionsDict["clientAddress"] = "192.168.209.81"
     optionsDict["serverAddress"] = "192.168.209.81"
-    # optionsDict["use_multicast"] = "239.255.42.99"
     optionsDict["use_multicast"] = True
 
     # This will create a new NatNet client
     optionsDict = my_parse_args(sys.argv, optionsDict)
 
-    # Update the _init_ connection settings with your own
     streaming_client = NatNetClient()
     streaming_client.set_client_address(optionsDict["clientAddress"])
     streaming_client.set_server_address(optionsDict["serverAddress"])
     streaming_client.set_use_multicast(optionsDict["use_multicast"])
 
     # Configure the streaming client to call our rigid body handler on the emulator to send data out.
-#    streaming_client.new_frame_listener = receive_new_frame
+    streaming_client.new_frame_listener = receive_new_frame
     streaming_client.rigid_body_listener = receive_rigid_body_frame
-    print("_____________________", streaming_client.new_frame_listener)
 
     # Start up the streaming client now that the callbacks are set up.
     # This will run perpetually, and operate on a separate thread.
     is_running = streaming_client.run()
-    streaming_client.rigid_body_listener = receive_rigid_body_frame
-    print("_____________________", streaming_client.rigid_body_listener)
-    print("_____________________", streaming_client.new_frame_listener )
-    print('test section: ')
-#    print(receive_new_frame(1))
-    # print data
-    print('test section done ')
-#    data= streaming_client.__unpack_rigid_body( self, data, major, minor, rb_num))
-
-
     if not is_running:
         print("ERROR: Could not start streaming client.")
         try:
@@ -185,11 +180,8 @@ if __name__ == "__main__":
         finally:
             print("exiting")
 
-    # Activate continous loop
     is_looping = True
     time.sleep(1)
-
-    # Check connection to the client
     if streaming_client.connected() is False:
         print("ERROR: Could not connect properly.  Check that Motive streaming is on.")
         try:
@@ -199,18 +191,12 @@ if __name__ == "__main__":
         finally:
             print("exiting")
 
-    # This will give you the system setup
     print_configuration(streaming_client)
     print("\n")
     print_commands(streaming_client.can_change_bitstream_version())
 
-    # setup body in python
-#    body = streaming_client.rigid_bodies[0]
-
 
     while is_looping:
-        streaming_client.new_frame_listener = receive_new_frame
-        streaming_client.rigid_body_listener = receive_rigid_body_frame
         inchars = input('Enter command or (\'h\' for list of commands)\n')
         if len(inchars)>0:
             c1 = inchars[0].lower()
@@ -300,12 +286,6 @@ if __name__ == "__main__":
                 is_looping = False
                 streaming_client.shutdown()
                 break
-
-            elif c1 == "b":
-
-
-                print(body.position)
-
             else:
                 print("Error: Command %s not recognized"%c1)
             print("Ready...\n")
