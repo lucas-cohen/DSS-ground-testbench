@@ -110,7 +110,7 @@ class Platform:
             self.time_of_last_update = current_time
             
             # Update locations
-            # self.get_location()
+            self.get_location()
         
             dx = x_set[self.temp_loop_idx] - self.xpos
             dy = y_set[self.temp_loop_idx] - self.ypos
@@ -151,11 +151,10 @@ class Platform:
             stream_to(data_to_send, self.ser_com)
             self.console_print("data", data_to_send)
             
-            
             # hardcoding succes of motion
-            self.xpos     = x_set[self.temp_loop_idx]
-            self.ypos     = y_set[self.temp_loop_idx]
-            self.attitude = a_set[self.temp_loop_idx]
+            # self.xpos     = x_set[self.temp_loop_idx]
+            # self.ypos     = y_set[self.temp_loop_idx]
+            # self.attitude = a_set[self.temp_loop_idx]
             
             if self.temp_loop_idx == len(time_set)-1:
                 self.temp_loop_idx = 0
