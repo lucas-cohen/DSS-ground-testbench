@@ -5,9 +5,12 @@ Functions for data comunicaiton with the Motive Software
 """
 import natnetclient as natnet
 
-def get_body_package_data(platform):
+def get_body_package_data(motive_body_id):
     ## Implement ith motive API
-    return [platform.xpos, platform.ypos, platform.attitude]
+
+    raise NotImplementedError #TODO:
+    
+    return [xpos, ypos, attitude]
 
 
 def main():
