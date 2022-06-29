@@ -8,7 +8,7 @@ from matplotlib.animation import FuncAnimation
 
 from communication.wifi_api import open_serial, stream_to, get_ports_dict
 from control.default_dynamics import circle_motion, swarm_circle, calibrate_directions, transform_frame
-from communication.motive_api import get_body_package_data
+from communication.motive_api import get_body_package_data, setup_client
 
 
 class Platform:    
@@ -200,6 +200,10 @@ class Platform:
 
 # code execution for this file        
 def main(selected_pattern, plotting=True, debug=True):
+    
+    # create motive thread
+    setup_client()
+    
     # create robots
     for port,name in get_ports_dict().items():
         print(port,name)
@@ -208,7 +212,6 @@ def main(selected_pattern, plotting=True, debug=True):
     formation_size = 2
     
     # initial conditions
-    
     platform1_set, platform2_set = selected_pattern()
     
     x0 = [platform1_set[1][0], platform2_set[1][0]]
