@@ -27,22 +27,33 @@ import MoCapData
 # This is a callback function that gets connected to the NatNet client
 # and called once per mocap frame.
 def receive_new_frame(data_dict):
-    order_list=[ "frameNumber", "markerSetCount", "unlabeledMarkersCount", "rigidBodyCount", "skeletonCount",
-                "labeledMarkerCount", "timecode", "timecodeSub", "timestamp", "isRecording", "trackedModelsChanged" ]
-    dump_args = False
-    if dump_args == True:
-        out_string = "    "
-        for key in data_dict:
-            out_string += key + "="
-            if key in data_dict :
-                out_string += data_dict[key] + " "
-            out_string+="/"
-        print(out_string)
+    pass
+ #  order_list=[ "frameNumber", "markerSetCount", "unlabeledMarkersCount", "rigidBodyCount", "skeletonCount",
+ #              "labeledMarkerCount", "timecode", "timecodeSub", "timestamp", "isRecording", "trackedModelsChanged" ]
+ #  dump_args = False
+ #  if dump_args == True:
+ #      out_string = "    "
+ #      for key in data_dict:
+ #          out_string += key + "="
+ #          if key in data_dict :
+ #              out_string += data_dict[key] + " "
+ #          out_string+="/"
+ #      print(out_string)
 
 # This is a callback function that gets connected to the NatNet client. It is called once per rigid body per frame
-def receive_rigid_body_frame( new_id, position, rotation ):
-    print( "Received frame for rigid body", new_id )
-    print( "Received frame for rigid body", new_id," ",position," ",rotation )
+
+# Make an array to store the most up to date rigid body data: id|position|rotation
+rigid_body_list = [[1, 0, 0],
+                    [19, 0, 0]]
+
+def receive_rigid_body_frame(new_id, position, rotation ):
+    #print( "Received frame for rigid body", new_id )
+    #print( "Received frame for rigid body", new_id," ",position," ",rotation )
+    if new_id == rigid_body_list[0][0]:
+        rigid_body_list[0] = [new_id, position, rotation]
+    elif new_id == rigid_body_list[1][0]:
+        rigid_body_list[1] = [new_id, position, rotation]
+    pass
 
 
 def add_lists(totals, totals_tmp):
@@ -149,7 +160,7 @@ def my_parse_args(arg_list, args_dict):
     return args_dict
 
 
-if __name__ == "__main__":
+def run():
 
     optionsDict = {}
     optionsDict["clientAddress"] = "145.94.177.206"
@@ -171,6 +182,7 @@ if __name__ == "__main__":
     # Start up the streaming client now that the callbacks are set up.
     # This will run perpetually, and operate on a separate thread.
     is_running = streaming_client.run()
+    streaming_client.set_print_level(0)
     if not is_running:
         print("ERROR: Could not start streaming client.")
         try:
@@ -180,7 +192,7 @@ if __name__ == "__main__":
         finally:
             print("exiting")
 
-    is_looping = True
+    is_looping = False
     time.sleep(1)
     if streaming_client.connected() is False:
         print("ERROR: Could not connect properly.  Check that Motive streaming is on.")
@@ -194,7 +206,7 @@ if __name__ == "__main__":
     print_configuration(streaming_client)
     print("\n")
     print_commands(streaming_client.can_change_bitstream_version())
-
+    print("NEW 10:58")
 
     while is_looping:
         inchars = input('Enter command or (\'h\' for list of commands)\n')
@@ -286,7 +298,15 @@ if __name__ == "__main__":
                 is_looping = False
                 streaming_client.shutdown()
                 break
+            elif c1 == 'b':
+                print(rigid_body_list)
             else:
                 print("Error: Command %s not recognized"%c1)
             print("Ready...\n")
+
+            #time.sleep(10)
+            #print(rigid_body_list)
+
     print("exiting")
+if __name__ == "__main__":
+    run()

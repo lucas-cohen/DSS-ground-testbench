@@ -90,7 +90,8 @@ def stream_to(data_array, ser, debug=False):
     write_str(generator, ser)
     
     if debug:
-        print(f">> {ser.name} | {generator}")
+    #    print(f">> {ser.name} | {generator}")
+        print('generator: ', generator)
  
         
 def stream_from(ser, debug=False):

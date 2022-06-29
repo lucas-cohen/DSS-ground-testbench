@@ -3,6 +3,7 @@
 import numpy as np
 import time
 
+import matplotlib; matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
@@ -30,8 +31,8 @@ class Platform:
          
          # Create serial link to device
          self.com_port = com_port
-         self.ser_com = open_serial(self.com_port)
-         
+#         self.ser_com = open_serial(self.com_port)
+         self.ser_com = None
          self.update_freq = update_freq
          self.time_of_last_update = time.time()
          
@@ -56,7 +57,8 @@ class Platform:
     
     def console_print(self, name, val):
         if self.debug:
-            print(f"{self.name}: {name}={val}")
+            print(name,val)
+#            print(f"{self.name}: {name}={val}")
     
     
     def test_solo_motion(self):
@@ -151,10 +153,11 @@ class Platform:
             stream_to(data_to_send, self.ser_com)
             self.console_print("data", data_to_send)
             
+            
             # hardcoding succes of motion
-            # self.xpos     = x_set[self.temp_loop_idx]
-            # self.ypos     = y_set[self.temp_loop_idx]
-            # self.attitude = a_set[self.temp_loop_idx]
+           # self.xpos     = x_set[self.temp_loop_idx]
+           # self.ypos     = y_set[self.temp_loop_idx]
+           # self.attitude = a_set[self.temp_loop_idx]
             
             if self.temp_loop_idx == len(time_set)-1:
                 self.temp_loop_idx = 0
@@ -207,7 +210,9 @@ def main(selected_pattern, plotting=True, debug=True):
     for port,name in get_ports_dict().items():
         print(port,name)
     
-    selected_ports = ["/dev/cu.Bluetooth-Incoming-Port", "/dev/cu.Bluetooth-Incoming-Port"]#["/dev/cu.usbserial-1440", "/dev/cu.usbserial-1450"]
+#    selected_ports = ["/dev/cu.Bluetooth-Incoming-Port", "/dev/cu.Bluetooth-Incoming-Port"]#["/dev/cu.usbserial-1440", "/dev/cu.usbserial-1450"]
+    selected_ports = ["/dev/ttyS15", "/dev/ttyS97"]#["/dev/cu.usbserial-1440", "/dev/cu.usbserial-1450"]
+    rigid_body_ids = [19,0]
     formation_size = 2
     
     # initial conditions
@@ -226,10 +231,10 @@ def main(selected_pattern, plotting=True, debug=True):
     
     local_offset = get_local_offset()  
     
-    print(f"{local_offset = }")
+    #print(f"{local_offset = }")
     offset_patern = [transform_frame(selected_pattern()[0], local_offset), transform_frame(selected_pattern()[1], local_offset)]
 
-    formation = [Platform(f"Robot-{i+1}", i, selected_ports[i], xpos=x0[i], ypos=y0[i], attitude=a0[i], transform_set=local_offset ,debug=debug) for i in range(formation_size)]
+    formation = [Platform(f"Robot-{i+1}", i, selected_ports[i], rigid_body_ids[i], xpos=x0[i], ypos=y0[i], attitude=a0[i], transform_set=local_offset ,debug=debug) for i in range(formation_size)]
     
     
     #plotting stuff
@@ -261,7 +266,7 @@ def main(selected_pattern, plotting=True, debug=True):
         x_range = get_range_values(offset_patern, 1) + np.array([-0.25, 0.25])
         y_range = get_range_values(offset_patern, 2) + np.array([-0.25, 0.25])
         
-        print(f'{x_range = }')
+        #print(f'{x_range = }')
         
         ax.set_xlim(*x_range)
         ax.set_ylim(*y_range)
