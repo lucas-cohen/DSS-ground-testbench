@@ -12,7 +12,7 @@ from communication.motive_api import get_body_package_data
 
 
 class Platform:    
-    def __init__(self, name:str, idx, com_port:str, xpos:float=.0, ypos:float=.0, attitude:float=.0, transform_set=[0,0,0], update_freq:float=0.1, debug=False, max_lin_vel=0.4, max_ang_vel=2*np.pi) -> None:
+    def __init__(self, name:str, idx, com_port:str,  motive_id:int,  xpos:float=.0, ypos:float=.0, attitude:float=.0, transform_set=[0,0,0], update_freq:float=0.1, debug=False, max_lin_vel=0.4, max_ang_vel=2*np.pi) -> None:
          self.name = name
          
          # default position and orientation
@@ -45,7 +45,7 @@ class Platform:
          
          
          # Motive API data
-         self.rigid_body_id = None #TODO
+         self.motive_id = motive_id
          
          self.get_location()
          self.tranform_set = transform_set
@@ -163,7 +163,7 @@ class Platform:
                 self.temp_loop_idx += 1
                 
     def get_location(self):
-        xpos_data, ypos_data, attitude_data = get_body_package_data(self)
+        xpos_data, ypos_data, attitude_data = get_body_package_data(self.motive_id)
         
         # set object values
         self.ypos     = ypos_data
@@ -216,7 +216,7 @@ def main(selected_pattern, plotting=True, debug=True):
     a0 = [platform1_set[3][0], platform2_set[3][0]]
     
     def get_local_offset():
-        anchor = Platform(f"anchor", 0, None, debug=False) # TODO: add achor robot mocap info
+        anchor = Platform(f"anchor", 0, None, None, debug=False) # TODO: add achor robot mocap info
         anchor.get_location()
         
         return anchor.xpos, anchor.ypos, anchor.attitude 
