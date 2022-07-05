@@ -539,7 +539,7 @@ if __name__ == "__main__":
     
     gains={ 'x' : [1,0,0], #FIXME: TUNE
             'y' : [1,0,0],
-            'y' : [1,0,0]}    
+            'a' : [1,0,0]}    
 
     # EXECUTE
     main(motion, selected_ports, rigid_body_ids, gains, plotting=True, debug=True)
