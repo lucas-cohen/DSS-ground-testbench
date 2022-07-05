@@ -17,6 +17,17 @@ def transform_frame(data, transform=[0,0,0]):
     return t_data, x_transformed, y_transformed, a_transform
     
     
+def stay_at_position(dt = 0.1):
+    time_set = time_set=np.arange(0, 10, dt)
+    
+    x_pos = np.zeros(len(time_set))
+    y_pos = np.zeros(len(time_set))
+    a_set = np.zeros(len(time_set))
+    
+    return time_set, x_pos, y_pos, a_set
+    
+
+    
 
 def circle_around_point(point_pos, point_vel, time, radius, period, sign=1, initial_time=0, initial_angle=0):
     center_px, center_py = point_pos
