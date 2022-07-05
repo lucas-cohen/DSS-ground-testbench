@@ -62,9 +62,6 @@ class Platform:
         if self.debug:
             print(self.name, "on", self.com_port)
 
-
-
-
     
     def console_print(self, name, val):
         if self.debug and self.name == "Robot-1":
@@ -106,8 +103,8 @@ class Platform:
             data_to_send = [self.speed, self.direction, self.rotation]
             stream_to(data_to_send, self.ser_com)
             
-            
             self.console_print("data", data_to_send)
+
 
     def start_motion(self, dynamics, repeat=False):
 
@@ -115,7 +112,6 @@ class Platform:
         current_time = time.time()
         delta_time = current_time - self.time_of_last_update
         
-
         if delta_time >= self.update_freq:
             self.time_of_last_update = current_time
             
@@ -166,7 +162,6 @@ class Platform:
             if np.abs(da) < 10 * np.pi / 180:
                 da = 0
 
-
             if np.abs(dx) < 5e-2:
                 dx = 0
 
@@ -175,8 +170,6 @@ class Platform:
 
             if np.abs(da) < 5*np.pi/180:
                 da = 0
-
-
 
             # print if capping is taking place
             dt = delta_time
@@ -189,7 +182,6 @@ class Platform:
             
             stream_to(data_to_send, self.ser_com)
             self.console_print("data", data_to_send)
-            
             
             # hardcoding succes of motion
            # self.xpos     = x_set[self.temp_loop_idx]
@@ -257,16 +249,13 @@ class Platform:
                 self.temp_loop_idx += 1
 
 
-
-
-
-
     def get_location(self):
         xpos_data, ypos_data, attitude_data = get_body_package_data(self.motive_id)
         # set object values
         self.ypos     = ypos_data
         self.xpos     = xpos_data
         self.attitude = attitude_data
+                
                 
     def initalise_position(self, xpos,ypos,attitude):     
         self.xpos     = xpos
@@ -275,8 +264,10 @@ class Platform:
         
         self.console_print("Position initialize at: pos=", [ self.xpos, self.ypos, self.attitude])
 
+
     def set_command(self, data_to_send):
         self.speed,  self.direction, self.rotation = data_to_send
+
 
     def send_command(self):
         data_to_send = [self.speed,  self.direction, self.rotation]
@@ -323,10 +314,12 @@ class PID:
 
         return y
 
+
     def reset(self):
         # running variables (for ID)
         self.last_error = 0
         self.error_sum = 0
+
 
 class swarm:
     def __init__(self, formation_com_ports, formation_body_ids, gains, local_offset, initial_positions=[], update_freq:float=0.1, debug=False):
@@ -406,11 +399,7 @@ class swarm:
 
         if delta_time >= self.update_freq():
             pass
-
-
-
-
-
+        
 
 
 # code execution for this file
@@ -470,8 +459,7 @@ def main(selected_pattern, selected_ports, rigid_body_ids, gains, plotting=True,
     presist_on_repeat = False
 
     
-    def init():
-        
+    def init(): 
         get_range_values = lambda pattern, axis : np.array([min(min(pattern[0][axis]), min(pattern[1][axis])), max(max(pattern[0][axis]), max(pattern[1][axis]))])
         
         x_range = get_range_values(offset_patern, 1) + np.array([-0.25, 0.25])
@@ -513,7 +501,6 @@ def main(selected_pattern, selected_ports, rigid_body_ids, gains, plotting=True,
         
         lnRel.set_data([pos1x, pos2x], [pos1y, pos2y])
         
-    
         return ln1,mark1,ln2,mark2,vec1,vec2,vecRel,lnRel,time_disp
     
     if plotting:
@@ -527,8 +514,7 @@ def main(selected_pattern, selected_ports, rigid_body_ids, gains, plotting=True,
         
         if plotting:
             plt.pause(1e-12)
-    
-
+            
         
 if __name__ == "__main__":
 
