@@ -12,6 +12,9 @@ from communication.NatNetClient import NatNetClient
 import DataDescriptions
 import MoCapData
 
+# Make an array to store the most up to date rigid body data: id|position|rotation
+rigid_body_list = [[1, 0, 0],
+                    [1, 0, 0]]
 # This is a callback function that gets connected to the NatNet client
 # and called once per mocap frame.
 def receive_new_frame(data_dict):
@@ -30,9 +33,7 @@ def receive_new_frame(data_dict):
 
 # This is a callback function that gets connected to the NatNet client. It is called once per rigid body per frame
 
-# Make an array to store the most up to date rigid body data: id|position|rotation
-rigid_body_list = [[1, 0, 0],
-                    [20, 0, 0]]
+
 
 def receive_rigid_body_frame(new_id, position, rotation ):
     #print( "Received frame for rigid body", new_id )
@@ -147,21 +148,44 @@ def my_parse_args(arg_list, args_dict):
 
     return args_dict
 
+
+def toEulerAngles(q):
+    x, y, z, w = q
+    # Roll Axis
+    sinr_cosp = 2 * (w * x + y * z)
+    cosr_cosp = 1 - 2 * (x * x + y * y)
+    roll = np.arctan2(sinr_cosp, cosr_cosp)
+
+    # Pitch Axis
+    sinp = 2 * (w * y - z * x)
+    if (np.abs(sinp) >= 1):
+        pitch = np.copysign(np.pi / 2, sinp)  # use 90 degrees if out of range
+    else:
+        pitch = np.arcsin(sinp)
+
+    # Yaw Axis
+    siny_cosp = 2 * (w * z + x * y)
+    cosy_cosp = 1 - 2 * (y * y + z * z)
+    yaw = np.arctan2(siny_cosp, cosy_cosp)
+
+    return pitch, roll, yaw
+
+
 def get_body_package_data(selected_motive_body_id):
     ## Implement ith motive API
 
     xpos, ypos, attitude = 0, 0, 0
-    
+
     for body_data in rigid_body_list:
         ID, position_data, quad_data = body_data
-        
-        if ID == selected_motive_body_id:
-            xpos, _, ypos  = position_data
-            attitude ,_,_,_  = quad_data #FIXME
-            break
-        
-    return [xpos, ypos, attitude]
 
+        if ID == selected_motive_body_id:
+            xpos, _, ypos = position_data
+            pitch, roll, yaw = toEulerAngles(quad_data)
+            attitude = yaw
+            break
+
+    return [xpos, ypos, attitude]
 
 def setup_client():
     optionsDict = {}
@@ -206,8 +230,10 @@ def setup_client():
             print("exiting")
 
     print_configuration(streaming_client)
-    print("\n")
-    print_commands(streaming_client.can_change_bitstream_version())
+
+    print(rigid_body_list)
+    time.sleep(2)
+    print(rigid_body_list)
 # def main():
 #     ip_motive = "192.168.209.81"
 #     #mci = "224.0.0.1
