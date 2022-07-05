@@ -13,8 +13,8 @@ import DataDescriptions
 import MoCapData
 
 # Make an array to store the most up to date rigid body data: id|position|rotation
-rigid_body_list = [[1, 0, 0],
-                    [2, 0, 0]]
+rigid_body_list = [[1, [0.0,0.0,0.0], [0.0,0.0,0.0,0.0]],
+                    [2, [0.0,0.0,0.0], [0.0,0.0,0.0,0.0]]]
 # This is a callback function that gets connected to the NatNet client
 # and called once per mocap frame.
 def receive_new_frame(data_dict):

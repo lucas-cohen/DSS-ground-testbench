@@ -210,8 +210,6 @@ class Platform:
 
         if delta_time >= self.update_freq:
 
-            dir_angle = np.arctan2(ex,ey) #FIXME: check of total magnitude of velocity exceeds, then deal with it
-
             # Computes errors
             ex = x_set[self.temp_loop_idx] - self.xpos
             ey = y_set[self.temp_loop_idx] - self.ypos
@@ -247,6 +245,10 @@ class Platform:
 
             if self.debug:
                 self.console_print("data", data_to_send)
+                self.console_print("Actual pos: : ", [round(self.xpos, 3), round(self.ypos, 3)])
+                self.console_print("Target pos: : ", [round(x_set[self.temp_loop_idx], 3), round(y_set[self.temp_loop_idx],3)])
+                self.console_print("deltas : ", [round(ux, 10), round(uy, 10), round(ua, 10)])
+
 
             # next time step
             if self.temp_loop_idx == len(time_set)-1:
@@ -520,8 +522,8 @@ def main(selected_pattern, selected_ports, rigid_body_ids, plotting=True, debug=
     
     while True:
 
-        formation[0].control_motion(offset_patern, repeat=True)
-        formation[1].control_motion(offset_patern, repeat=True)
+        formation[0].control_motion(selected_pattern, repeat=True)
+        formation[1].control_motion(selected_pattern, repeat=True)
         
         if plotting:
             plt.pause(1e-12)
