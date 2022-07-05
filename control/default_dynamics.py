@@ -24,7 +24,7 @@ def stay_at_position(dt = 0.1):
     y_pos = np.zeros(len(time_set))
     a_set = np.zeros(len(time_set))
     
-    return time_set, x_pos, y_pos, a_set
+    return [time_set, x_pos, y_pos, a_set], [time_set, x_pos, y_pos, a_set]
     
 
     
