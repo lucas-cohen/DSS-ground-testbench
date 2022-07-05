@@ -184,9 +184,9 @@ class Platform:
             self.console_print("data", data_to_send)
             
             # hardcoding succes of motion
-           # self.xpos     = x_set[self.temp_loop_idx]
-           # self.ypos     = y_set[self.temp_loop_idx]
-           # self.attitude = a_set[self.temp_loop_idx]
+            # self.xpos     = x_set[self.temp_loop_idx]
+            # self.ypos     = y_set[self.temp_loop_idx]
+            # self.attitude = a_set[self.temp_loop_idx]
             
             if self.temp_loop_idx == len(time_set)-1:
                 self.temp_loop_idx = 0
@@ -351,7 +351,7 @@ class swarm:
 
                 x0[i], y0[i], a0[i] = current_body.xpos, current_body.ypos, current_body.attitude
         else:
-            #initial positions are as given
+            # initial positions are as given
             x0, y0, a0 = initial_positions[0], initial_positions[1], initial_positions[2]
 
         # create final set of platforms
@@ -422,7 +422,7 @@ def main(selected_pattern, selected_ports, rigid_body_ids, gains, plotting=True,
     a0 = [platform1_set[3][0], platform2_set[3][0]]
     
     def get_local_offset():
-        anchor = Platform(f"anchor", 0, None, rigid_body_ids[0], debug=False) # TODO: add achor robot mocap info
+        anchor = Platform(f"anchor", 0, None, rigid_body_ids[0], gains, debug=False) # TODO: add achor robot mocap info
         anchor.get_location()
         
         return anchor.xpos, anchor.ypos, anchor.attitude 
@@ -432,12 +432,12 @@ def main(selected_pattern, selected_ports, rigid_body_ids, gains, plotting=True,
     
     print("offset:", local_offset)
     offset_patern = [transform_frame(selected_pattern()[0], local_offset), transform_frame(selected_pattern()[1], local_offset)]
-    #offset_patern = selected_pattern
+    # offset_patern = selected_pattern
 
     formation = [Platform(f"Robot-{i+1}", i, selected_ports[i], rigid_body_ids[i], gains, xpos=x0[i], ypos=y0[i], attitude=a0[i], transform_set=local_offset ,debug=debug) for i in range(formation_size)]
     
     
-    #plotting stuff
+    # plotting stuff
     fig, ax = plt.subplots()
 
     xdata1, ydata1 = [], []
