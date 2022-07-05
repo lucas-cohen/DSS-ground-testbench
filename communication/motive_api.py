@@ -231,9 +231,13 @@ def setup_client():
 
     print_configuration(streaming_client)
 
-    print(rigid_body_list)
+    print("Received rigid body test 1", rigid_body_list)
     time.sleep(2)
-    print(rigid_body_list)
+    print("Received rigid body test 1",rigid_body_list)
+    print("____________________________")
+    print("Motive connection completed...")
+
+
 # def main():
 #     ip_motive = "192.168.209.81"
 #     #mci = "224.0.0.1

@@ -98,9 +98,7 @@ class Platform:
             
             
             self.console_print("data", data_to_send)
-    
-    
-    
+
     def start_motion(self, dynamics, repeat=False):
 
         time_set,x_set,y_set,a_set = transform_frame(dynamics(dt=self.update_freq)[self.robot_idx], self.tranform_set)
@@ -172,10 +170,6 @@ class Platform:
         self.ypos     = ypos_data
         self.xpos     = xpos_data
         self.attitude = attitude_data
-        
-        
-        
-                
                 
     def initalise_position(self, xpos,ypos,attitude):     
         self.xpos     = xpos
@@ -183,8 +177,7 @@ class Platform:
         self.attitude = attitude
         
         self.console_print("Position initialize at: pos=", [ self.xpos, self.ypos, self.attitude])
-            
-    
+
     def set_command(self, data_to_send):
         self.speed,  self.direction, self.rotation = data_to_send
 
@@ -202,22 +195,16 @@ class Platform:
     
 
 # code execution for this file        
-def main(selected_pattern, plotting=True, debug=True):
-    
-    ## MOTIVE IDS
-    
+def main(selected_pattern, selected_ports, rigid_body_ids, plotting=True, debug=True):
     
     # create motive thread
     setup_client()
     
     # create robots
-    for port,name in get_ports_dict().items():
-        print(port,name)
-    
-#    selected_ports = ["/dev/cu.Bluetooth-Incoming-Port", "/dev/cu.Bluetooth-Incoming-Port"]#["/dev/cu.usbserial-1440", "/dev/cu.usbserial-1450"]
-    selected_ports = ["/dev/ttyS15", "/dev/ttyS97"]#["/dev/cu.usbserial-1440", "/dev/cu.usbserial-1450"]
-    rigid_body_ids = [1,0]
-    formation_size = 2
+    for port, name in get_ports_dict().items():
+        print(port, name)
+
+    formation_size = len(rigid_body_ids)
     
     # initial conditions
     platform1_set, platform2_set = selected_pattern()
@@ -314,44 +301,28 @@ def main(selected_pattern, plotting=True, debug=True):
         plt.show(block=False)
     
     while True:
-        
-        #formation[0].get_location()
-        #formation[0].start_motion(calibrate_directions, repeat=True)
-        #formation[1].start_motion(calibrate_directions, repeat=True) 
+
         formation[0].start_motion(selected_pattern, repeat=True)
         formation[1].start_motion(selected_pattern, repeat=True)
         
         if plotting:
-            plt.pause(1e-12)
+            plt.pause(1/120)
     
-    
-    
-    
+
         
 if __name__ == "__main__":
-    main(swarm_circle, plotting=True, debug=True)
+
+    # SWARM SETUP
+    motion = calibrate_directions
+    selected_ports = ["COM3", "COM4"] #["/dev/cu.usbserial-1440", "/dev/cu.usbserial-1450"]
+    rigid_body_ids = [1, 1]
+
+    # EXECUTE
+    main(motion, selected_ports, rigid_body_ids, plotting=True, debug=True)
      
         # formation[0].test_command(120) #ROBOT 1
         # formation[1].test_command(120) #ROBOT 2
-    
-    
-    # # Code for running a single robot
-    # device = Platform("Main", "/dev/cu.Bluetooth-Incoming-Port")
-    
-    # while True:
-    #     try:
-    #         formation[0].test_command(120) #ROBOT 1
-    #         #formation[1].test_command(120) #ROBOT 2
-            
-    #     except KeyboardInterrupt:
-    #         interupt_time = time.time()
-    #         formation[0].set_command([0,0,0])
-            
-    #         while time.time() < interupt_time + 1.2*formation[0].update_freq:
-    #             formation[0].send_command()
-            
-    #         break
-    
+
     print("STOPPED")
                 
             
