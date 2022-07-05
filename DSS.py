@@ -13,7 +13,7 @@ from communication.motive_api import get_body_package_data, setup_client
 
 
 class Platform:    
-    def __init__(self, name:str, idx, com_port:str,  motive_id:int,  xpos:float=.0, ypos:float=.0, attitude:float=.0, transform_set=[0,0,0], update_freq:float=0.1, debug=False, max_lin_vel=0.4, max_ang_vel=2*np.pi) -> None:
+    def __init__(self, name:str, idx, com_port:str,  motive_id:int, control_gains:dict, xpos:float=.0, ypos:float=.0, attitude:float=.0, transform_set=[0,0,0], update_freq:float=0.1, debug=False, max_lin_vel=0.4, max_ang_vel=2*np.pi) -> None:
         self.name = name
 
         # default position and orientation
@@ -48,9 +48,9 @@ class Platform:
         # Motive API data
         self.motive_id = motive_id
 
-        self.x_gains= [1,0,0] #FIXME: TUNE
-        self.y_gains= [1,0,0] #FIXME: TUNE
-        self.a_gains= [1,0,0] #FIXME: TUNE
+        self.x_gains= control_gains['x'] 
+        self.y_gains= control_gains['y']
+        self.a_gains= control_gains['a'] 
 
         self.x_controller = PID(*self.x_gains)
         self.y_controller = PID(*self.x_gains)
@@ -329,7 +329,7 @@ class PID:
         self.error_sum = 0
 
 class swarm:
-    def __init__(self, formation_com_ports, formation_body_ids, local_offset, initial_positions=[], update_freq:float=0.1, debug=False):
+    def __init__(self, formation_com_ports, formation_body_ids, gains, local_offset, initial_positions=[], update_freq:float=0.1, debug=False):
         self.local_offset = local_offset
 
         self.update_freq = update_freq
@@ -362,7 +362,7 @@ class swarm:
             x0, y0, a0 = initial_positions[0], initial_positions[1], initial_positions[2]
 
         # create final set of platforms
-        self.platforms = [Platform(f"Robot-{i+1}", i, formation_com_ports[i], formation_body_ids[i], xpos=x0[i], ypos=y0[i], attitude=a0[i], transform_set=self.local_offset ,debug=debug) for i in range(self.formation_size)]
+        self.platforms = [Platform(f"Robot-{i+1}", i, formation_com_ports[i], formation_body_ids[i], gains, xpos=x0[i], ypos=y0[i], attitude=a0[i], transform_set=self.local_offset ,debug=debug) for i in range(self.formation_size)]
 
 
     def get_relative_position(self, reference_body_idx, do_update=False):
@@ -414,7 +414,7 @@ class swarm:
 
 
 # code execution for this file
-def main(selected_pattern, selected_ports, rigid_body_ids, plotting=True, debug=True):
+def main(selected_pattern, selected_ports, rigid_body_ids, gains, plotting=True, debug=True):
     
     # create motive thread
     setup_client()
@@ -445,7 +445,7 @@ def main(selected_pattern, selected_ports, rigid_body_ids, plotting=True, debug=
     offset_patern = [transform_frame(selected_pattern()[0], local_offset), transform_frame(selected_pattern()[1], local_offset)]
     #offset_patern = selected_pattern
 
-    formation = [Platform(f"Robot-{i+1}", i, selected_ports[i], rigid_body_ids[i], xpos=x0[i], ypos=y0[i], attitude=a0[i], transform_set=local_offset ,debug=debug) for i in range(formation_size)]
+    formation = [Platform(f"Robot-{i+1}", i, selected_ports[i], rigid_body_ids[i], gains, xpos=x0[i], ypos=y0[i], attitude=a0[i], transform_set=local_offset ,debug=debug) for i in range(formation_size)]
     
     
     #plotting stuff
@@ -536,9 +536,13 @@ if __name__ == "__main__":
     motion = stay_at_position
     selected_ports = ["COM3", "COM4"] #["/dev/cu.usbserial-1440", "/dev/cu.usbserial-1450"]
     rigid_body_ids = [1, 2]
+    
+    gains={ 'x' : [1,0,0], #FIXME: TUNE
+            'y' : [1,0,0],
+            'y' : [1,0,0]}    
 
     # EXECUTE
-    main(motion, selected_ports, rigid_body_ids, plotting=True, debug=True)
+    main(motion, selected_ports, rigid_body_ids, gains, plotting=True, debug=True)
         # formation[0].test_command(120) #ROBOT 1
         # formation[1].test_command(120) #ROBOT 2
 
