@@ -48,6 +48,7 @@ class Platform:
          # Motive API data
          self.motive_id = motive_id
          
+         
          self.get_location()
          self.tranform_set = transform_set
          
@@ -203,6 +204,9 @@ class Platform:
 # code execution for this file        
 def main(selected_pattern, plotting=True, debug=True):
     
+    ## MOTIVE IDS
+    
+    
     # create motive thread
     setup_client()
     
@@ -212,7 +216,7 @@ def main(selected_pattern, plotting=True, debug=True):
     
 #    selected_ports = ["/dev/cu.Bluetooth-Incoming-Port", "/dev/cu.Bluetooth-Incoming-Port"]#["/dev/cu.usbserial-1440", "/dev/cu.usbserial-1450"]
     selected_ports = ["/dev/ttyS15", "/dev/ttyS97"]#["/dev/cu.usbserial-1440", "/dev/cu.usbserial-1450"]
-    rigid_body_ids = [20,0]
+    rigid_body_ids = [1,0]
     formation_size = 2
     
     # initial conditions
@@ -223,7 +227,7 @@ def main(selected_pattern, plotting=True, debug=True):
     a0 = [platform1_set[3][0], platform2_set[3][0]]
     
     def get_local_offset():
-        anchor = Platform(f"anchor", 0, None, None, debug=False) # TODO: add achor robot mocap info
+        anchor = Platform(f"anchor", 0, None, rigid_body_ids[0], debug=False) # TODO: add achor robot mocap info
         anchor.get_location()
         
         return anchor.xpos, anchor.ypos, anchor.attitude 
