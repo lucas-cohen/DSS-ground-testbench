@@ -166,7 +166,7 @@ class Platform:
                 
     def get_location(self):
         xpos_data, ypos_data, attitude_data = get_body_package_data(self.motive_id)
-        
+        print(xpos_data)
         # set object values
         self.ypos     = ypos_data
         self.xpos     = xpos_data
@@ -212,7 +212,7 @@ def main(selected_pattern, plotting=True, debug=True):
     
 #    selected_ports = ["/dev/cu.Bluetooth-Incoming-Port", "/dev/cu.Bluetooth-Incoming-Port"]#["/dev/cu.usbserial-1440", "/dev/cu.usbserial-1450"]
     selected_ports = ["/dev/ttyS15", "/dev/ttyS97"]#["/dev/cu.usbserial-1440", "/dev/cu.usbserial-1450"]
-    rigid_body_ids = [19,0]
+    rigid_body_ids = [20,0]
     formation_size = 2
     
     # initial conditions
