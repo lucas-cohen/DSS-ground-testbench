@@ -273,10 +273,10 @@ class Platform:
 
         if delta_time >= self.update_freq:
             self.time_of_last_update = current_time
-            
+
             # update location
             self.get_location()
-            
+
             # Computes errors
             ex = point_heading[0] - self.xpos
             ey = point_heading[1] - self.ypos
@@ -285,7 +285,7 @@ class Platform:
                 ea = (ea_raw - np.sign(ea_raw)*2*np.pi) % (2*np.pi)
             else:
                 ea = ea_raw
-                 
+
             # Compute control commands
             ux = self.x_controller.control(ex, delta_time)
             uy = self.y_controller.control(ey, delta_time)
@@ -296,18 +296,21 @@ class Platform:
             required_speed      = np.sqrt(ux**2 + uy**2)/delta_time * 1e3
             required_rotation_rate   = ua/delta_time
 
-            if self.debug:
-                self.console_print("speed: ", round(required_speed,4))
+
 
             # Impose maximum control commands (SAFETY FEATURE)
             command_speed = np.sign(required_speed) * min(abs(required_speed), 1e3*self.max_lin_vel)
-            command_rotation_rate = np.sign(required_rotation_rate) * min(abs(required_rotation_rate), self.max_ang_vel)
+            command_rotation_rate = 0
+            # np.sign(required_rotation_rate) * min(abs(required_rotation_rate), self.max_ang_vel)
 
             # Send control commands to Platform
             data_to_send = [command_speed, required_direction, command_rotation_rate] #command_rotation] #FIXME!
             stream_to(data_to_send, self.ser_com)
-            
-            
+
+            if self.debug:
+                self.console_print("data_to_send [v,r,a]: ", np.round(data_to_send,4))
+                self.console_print("position (x,y,a): ", [round(self.xpos,4), round(self.ypos,4),round(self.attitude,3)])
+
     def get_location(self):
         xpos_data, ypos_data, attitude_data = get_body_package_data(self.motive_id)
         # set object values
@@ -349,7 +352,7 @@ class PID:
         self.k_I = k_I
         self.k_D = k_D
 
-        self.setpoint = setpoint
+#        self.setpoint = setpoint
 
         # running variables (for ID)
         self.last_error = 0
@@ -487,7 +490,7 @@ def main(selected_pattern, selected_ports, rigid_body_ids, gains, plotting=True,
         return anchor.xpos, anchor.ypos, anchor.attitude 
     
     
-    local_offset = [0,0,0] # get_local_offset()  
+    local_offset = [0,0,0] # get_local_offset()
     
     print("offset:", local_offset)
     offset_patern = [transform_frame(selected_pattern()[0], local_offset), transform_frame(selected_pattern()[1], local_offset)]
@@ -570,9 +573,9 @@ def main(selected_pattern, selected_ports, rigid_body_ids, gains, plotting=True,
 
         # formation[0].control_motion(selected_pattern, repeat=True)
         # formation[1].control_motion(selected_pattern, repeat=True)
-        
-        formation[0].go_to_point([0,0,0])
-        formation[1].go_to_point([0,0,0])
+
+        formation[0].go_to_point([-3,3,0])
+        #formation[1].go_to_point([-3,3,0])
         
         if plotting:
             plt.pause(1e-12)
@@ -585,12 +588,12 @@ if __name__ == "__main__":
     selected_ports = ["COM3", "COM4"] #["/dev/cu.usbserial-1440", "/dev/cu.usbserial-1450"]
     rigid_body_ids = [1, 2]
     
-    gains={ 'x' : [0.1, 0,0], #FIXME: TUNE
-            'y' : [0.1, 0,0],
+    gains={ 'x' : [1, 0,0], #FIXME: TUNE
+            'y' : [1, 0,0],
             'a' : [0.1, 0,0]}
 
     # EXECUTE
-    main(motion, selected_ports, rigid_body_ids, gains, plotting=True, debug=True)
+    main(motion, selected_ports, rigid_body_ids, gains, plotting=True, debug=False)
         # formation[0].test_command(120) #ROBOT 1
         # formation[1].test_command(120) #ROBOT 2
 

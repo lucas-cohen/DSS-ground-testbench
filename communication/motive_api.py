@@ -166,9 +166,11 @@ def toEulerAngles(q):
     # Yaw Axis
     siny_cosp = 2 * (w * z + x * y)
     cosy_cosp = 1 - 2 * (y * y + z * z)
-    
     #yaw = np.arctan2(siny_cosp, cosy_cosp)
     yaw = np.arctan2(2.0*(y*z + w*x), w*w - x*x - y*y + z*z)
+
+    print("y =", yaw)
+
 
     return pitch, roll, yaw
 
