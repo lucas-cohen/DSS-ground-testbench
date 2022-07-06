@@ -307,19 +307,7 @@ class Platform:
             data_to_send = [command_speed, required_direction, command_rotation_rate] #command_rotation] #FIXME!
             stream_to(data_to_send, self.ser_com)
             
-                
             
-                
-            
-                
-            
-                
-            
-            
-            
-
-
-
     def get_location(self):
         xpos_data, ypos_data, attitude_data = get_body_package_data(self.motive_id)
         # set object values
@@ -580,8 +568,11 @@ def main(selected_pattern, selected_ports, rigid_body_ids, gains, plotting=True,
     
     while True:
 
-        formation[0].control_motion(selected_pattern, repeat=True)
-        formation[1].control_motion(selected_pattern, repeat=True)
+        # formation[0].control_motion(selected_pattern, repeat=True)
+        # formation[1].control_motion(selected_pattern, repeat=True)
+        
+        formation[0].go_to_point([0,0,0])
+        formation[1].go_to_point([0,0,0])
         
         if plotting:
             plt.pause(1e-12)
