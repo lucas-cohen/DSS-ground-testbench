@@ -116,7 +116,7 @@ class Platform:
             self.time_of_last_update = current_time
             
             # Update locations
-            self.get_location()
+            #self.get_location()
         
             dx = x_set[self.temp_loop_idx] - self.xpos
             dy = y_set[self.temp_loop_idx] - self.ypos
@@ -130,9 +130,10 @@ class Platform:
             
             # set max magniutde of deltas
             if self.debug:
-                self.console_print("Actual pos: : ", [round(self.xpos, 3), round(self.ypos, 3)])
-                self.console_print("Target pos: : ", [round(x_set[self.temp_loop_idx], 3), round(y_set[self.temp_loop_idx],3)])
-                self.console_print("deltas : ", [round(dx, 10), round(dy, 10), round(da, 10)])
+                pass
+                # self.console_print("Actual pos: : ", [round(self.xpos, 3), round(self.ypos, 3)])
+                # self.console_print("Target pos: : ", [round(x_set[self.temp_loop_idx], 3), round(y_set[self.temp_loop_idx],3)])
+                # self.console_print("deltas : ", [round(dx, 10), round(dy, 10), round(da, 10)])
 
             dxmax = np.abs(np.sin(dir_angle)) * self.max_lin_vel * delta_time
             dymax = np.abs(np.cos(dir_angle)) * self.max_lin_vel * delta_time
@@ -153,23 +154,23 @@ class Platform:
                 #self.console_print("Attitude step exceeds max: ",[np.abs(da), damax])
                 dy = np.sign(da) * damax
 
-            if np.abs(dx) < 5e-2:
-                dx = 0
-
-            if np.abs(dy) < 5e-2:
-                dy = 0
-
-            if np.abs(da) < 10 * np.pi / 180:
-                da = 0
-
-            if np.abs(dx) < 5e-2:
-                dx = 0
-
-            if np.abs(dy) < 5e-2:
-                dy = 0
-
-            if np.abs(da) < 5*np.pi/180:
-                da = 0
+            # if np.abs(dx) < 5e-2:
+            #     dx = 0
+            #
+            # if np.abs(dy) < 5e-2:
+            #     dy = 0
+            #
+            # if np.abs(da) < 10 * np.pi / 180:
+            #     da = 0
+            #
+            # if np.abs(dx) < 5e-2:
+            #     dx = 0
+            #
+            # if np.abs(dy) < 5e-2:
+            #     dy = 0
+            #
+            # if np.abs(da) < 5*np.pi/180:
+            #     da = 0
 
             # print if capping is taking place
             dt = delta_time
@@ -179,14 +180,18 @@ class Platform:
             required_rotation   = da/dt
             
             data_to_send = [required_speed, required_direction, required_rotation]
-            
+
+            if self.debug:
+                self.console_print("speed: ", round(required_speed,4))
+                self.console_print("data", data_to_send)
+
             stream_to(data_to_send, self.ser_com)
-            self.console_print("data", data_to_send)
+
             
             # hardcoding succes of motion
-            # self.xpos     = x_set[self.temp_loop_idx]
-            # self.ypos     = y_set[self.temp_loop_idx]
-            # self.attitude = a_set[self.temp_loop_idx]
+            self.xpos     = x_set[self.temp_loop_idx]
+            self.ypos     = y_set[self.temp_loop_idx]
+            self.attitude = a_set[self.temp_loop_idx]
             
             if self.temp_loop_idx == len(time_set)-1:
                 self.temp_loop_idx = 0
@@ -195,19 +200,23 @@ class Platform:
 
 
     def control_motion(self, dynamics, repeat=False):
-        time_set,x_set,y_set,a_set = transform_frame(dynamics(dt=self.update_freq)[self.robot_idx], self.tranform_set)
+        time_set, x_set, y_set, a_set = transform_frame(dynamics(dt=self.update_freq)[self.robot_idx], self.tranform_set)
 
         current_time = time.time()
         delta_time = current_time - self.time_of_last_update
 
         if delta_time >= self.update_freq:
+            self.time_of_last_update = current_time
+
+            # Update locations
+            self.get_location()
 
             # Computes errors
             ex = x_set[self.temp_loop_idx] - self.xpos
             ey = y_set[self.temp_loop_idx] - self.ypos
             ea_raw = (a_set[self.temp_loop_idx] - self.attitude)
             if abs(ea_raw) > np.pi:
-                ea = (ea_raw - np.sign(ea_raw)*2*np.pi)%(2*np.pi)
+                ea = (ea_raw - np.sign(ea_raw)*2*np.pi) % (2*np.pi)
             else:
                 ea = ea_raw
 
@@ -218,8 +227,8 @@ class Platform:
 
             # Compute control commands
             ux = self.x_controller.control(ex, delta_time)
-            uy = self.x_controller.control(ey, delta_time)
-            ua = self.x_controller.control(ea, delta_time)
+            uy = self.y_controller.control(ey, delta_time)
+            ua = self.a_controller.control(ea, delta_time)
 
 
             # Compute required control commands
@@ -227,19 +236,29 @@ class Platform:
             required_speed      = np.sqrt(ux**2 + uy**2)/delta_time * 1e3
             required_rotation   = ua/delta_time
 
+            if self.debug:
+                self.console_print("speed: ", round(required_speed,4))
+
             # Impose maximum control commands (SAFETY FEATURE)
-            command_direction = np.sign(required_speed) * min(abs(required_speed), self.max_lin_vel)
-            command_direction = np.sign(required_rotation) * min(abs(required_rotation), self.max_lin_vel)
+            command_speed = np.sign(required_speed) * min(abs(required_speed), 1e3*self.max_lin_vel)
+            command_rotation = np.sign(required_rotation) * min(abs(required_rotation), self.max_lin_vel)
 
             # Send control commands to Platform
-            data_to_send = [required_speed, required_direction, required_rotation]
+            data_to_send = [required_speed, required_direction, required_rotation] #command_rotation] #FIXME!
             stream_to(data_to_send, self.ser_com)
 
             if self.debug:
-                self.console_print("data", data_to_send)
-                self.console_print("Actual pos: : ", [round(self.xpos, 3), round(self.ypos, 3)])
-                self.console_print("Target pos: : ", [round(x_set[self.temp_loop_idx], 3), round(y_set[self.temp_loop_idx],3)])
-                self.console_print("deltas : ", [round(ux, 10), round(uy, 10), round(ua, 10)])
+                pass
+                #self.console_print("data", data_to_send)
+                #self.console_print("Actual pos: : ", [round(self.xpos, 3), round(self.ypos, 3)])
+                #self.console_print("Target pos: : ", [round(x_set[self.temp_loop_idx], 3), round(y_set[self.temp_loop_idx],3)])
+                #self.console_print("deltas : ", [round(ex, 4), round(ey, 4), round(ea, 4)])
+                #self.console_print("commands : ", [round(ux, 4), round(uy, 4), round(ua, 4)])
+
+            # hardcoding succes of motion
+            # self.xpos     = x_set[self.temp_loop_idx]
+            # self.ypos     = y_set[self.temp_loop_idx]
+            # self.attitude = a_set[self.temp_loop_idx]
 
 
             # next time step
@@ -523,9 +542,9 @@ if __name__ == "__main__":
     selected_ports = ["COM3", "COM4"] #["/dev/cu.usbserial-1440", "/dev/cu.usbserial-1450"]
     rigid_body_ids = [1, 2]
     
-    gains={ 'x' : [1,0,0], #FIXME: TUNE
-            'y' : [1,0,0],
-            'a' : [1,0,0]}    
+    gains={ 'x' : [1, 0,0], #FIXME: TUNE
+            'y' : [1, 0,0],
+            'a' : [0.1, 0,0]}
 
     # EXECUTE
     main(motion, selected_ports, rigid_body_ids, gains, plotting=True, debug=True)
