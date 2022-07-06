@@ -13,7 +13,7 @@ from communication.motive_api import get_body_package_data, setup_client
 
 
 class Platform:    
-    def __init__(self, name:str, idx, com_port:str,  motive_id:int, control_gains:dict, xpos:float=.0, ypos:float=.0, attitude:float=.0, transform_set=[0,0,0], update_freq:float=0.1, debug=False, max_lin_vel=0.4, max_ang_vel=2*np.pi) -> None:
+    def __init__(self, name:str, idx, com_port:str,  motive_id:int, control_gains:dict, xpos:float=.0, ypos:float=.0, attitude:float=.0, transform_set=[0,0,0], update_freq:float=0.1, debug=False, max_lin_vel=0.05, max_ang_vel=0.1*np.pi) -> None:
         self.name = name
 
         # default position and orientation
@@ -35,6 +35,7 @@ class Platform:
         self.ser_com = open_serial(self.com_port)
         self.update_freq = update_freq
         self.time_of_last_update = time.time()
+        self.start_time = 0
 
         self.max_lin_vel = max_lin_vel # m/s
         self.max_ang_vel = max_ang_vel # rad/s
@@ -53,7 +54,7 @@ class Platform:
         self.a_gains= control_gains['a'] 
 
         self.x_controller = PID(*self.x_gains)
-        self.y_controller = PID(*self.x_gains)
+        self.y_controller = PID(*self.y_gains)
         self.a_controller = PID(*self.a_gains)
 
         self.get_location()
@@ -200,7 +201,7 @@ class Platform:
 
 
     def control_motion(self, dynamics, repeat=False):
-        time_set, x_set, y_set, a_set = transform_frame(dynamics(dt=self.update_freq)[self.robot_idx], self.tranform_set)
+        time_set, x_set, y_set, a_set = dynamics(dt=self.update_freq)[self.robot_idx]  #transform_frame(dynamics(dt=self.update_freq)[self.robot_idx], self.tranform_set)
 
         current_time = time.time()
         delta_time = current_time - self.time_of_last_update
@@ -221,15 +222,14 @@ class Platform:
                 ea = ea_raw
 
             # set setpoint
-            self.x_controller.setpoint = x_set[self.temp_loop_idx]
-            self.y_controller.setpoint = y_set[self.temp_loop_idx]
-            self.a_controller.setpoint = a_set[self.temp_loop_idx]
+            # self.x_controller.setpoint = x_set[self.temp_loop_idx]
+            # self.y_controller.setpoint = y_set[self.temp_loop_idx]
+            # self.a_controller.setpoint = a_set[self.temp_loop_idx]
 
             # Compute control commands
             ux = self.x_controller.control(ex, delta_time)
             uy = self.y_controller.control(ey, delta_time)
             ua = self.a_controller.control(ea, delta_time)
-
 
             # Compute required control commands
             required_direction  = (np.arctan2(ux, uy) + np.pi/2 - self.attitude) % (2*np.pi)
@@ -266,6 +266,58 @@ class Platform:
                 self.temp_loop_idx = 0
             else:
                 self.temp_loop_idx += 1
+
+    def go_to_point(self, point_heading):
+        current_time = time.time()
+        delta_time = current_time - self.time_of_last_update
+
+        if delta_time >= self.update_freq:
+            self.time_of_last_update = current_time
+            
+            # update location
+            self.get_location()
+            
+            # Computes errors
+            ex = point_heading[0] - self.xpos
+            ey = point_heading[1] - self.ypos
+            ea_raw = (point_heading[2] - self.attitude)
+            if abs(ea_raw) > np.pi:
+                ea = (ea_raw - np.sign(ea_raw)*2*np.pi) % (2*np.pi)
+            else:
+                ea = ea_raw
+                 
+            # Compute control commands
+            ux = self.x_controller.control(ex, delta_time)
+            uy = self.y_controller.control(ey, delta_time)
+            ua = self.a_controller.control(ea, delta_time)
+
+            # Compute required control commands
+            required_direction  = (np.arctan2(ux, uy) + np.pi/2 - self.attitude) % (2*np.pi)
+            required_speed      = np.sqrt(ux**2 + uy**2)/delta_time * 1e3
+            required_rotation_rate   = ua/delta_time
+
+            if self.debug:
+                self.console_print("speed: ", round(required_speed,4))
+
+            # Impose maximum control commands (SAFETY FEATURE)
+            command_speed = np.sign(required_speed) * min(abs(required_speed), 1e3*self.max_lin_vel)
+            command_rotation_rate = np.sign(required_rotation_rate) * min(abs(required_rotation_rate), self.max_ang_vel)
+
+            # Send control commands to Platform
+            data_to_send = [command_speed, required_direction, command_rotation_rate] #command_rotation] #FIXME!
+            stream_to(data_to_send, self.ser_com)
+            
+                
+            
+                
+            
+                
+            
+                
+            
+            
+            
+
 
 
     def get_location(self):
@@ -447,7 +499,7 @@ def main(selected_pattern, selected_ports, rigid_body_ids, gains, plotting=True,
         return anchor.xpos, anchor.ypos, anchor.attitude 
     
     
-    local_offset = get_local_offset()  
+    local_offset = [0,0,0] # get_local_offset()  
     
     print("offset:", local_offset)
     offset_patern = [transform_frame(selected_pattern()[0], local_offset), transform_frame(selected_pattern()[1], local_offset)]
@@ -542,8 +594,8 @@ if __name__ == "__main__":
     selected_ports = ["COM3", "COM4"] #["/dev/cu.usbserial-1440", "/dev/cu.usbserial-1450"]
     rigid_body_ids = [1, 2]
     
-    gains={ 'x' : [1, 0,0], #FIXME: TUNE
-            'y' : [1, 0,0],
+    gains={ 'x' : [0.1, 0,0], #FIXME: TUNE
+            'y' : [0.1, 0,0],
             'a' : [0.1, 0,0]}
 
     # EXECUTE
