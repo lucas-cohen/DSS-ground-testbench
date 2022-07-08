@@ -8,40 +8,53 @@ import matplotlib.pyplot as plt
 
 def swarm_relative_test(platforms, idx, running_time):   
     # properties
-    hold_position = [-2,3]
-    period = 20
+    hold_position = [-0.22,-0.2]
+    period = 40
     
-    r = 0.9
+    r = 1.5
     
     if idx == 0: # perform absolute motion
         x,y = hold_position
-        a = ((running_time/period)%1) * 2*np.pi
-        
+        print(('running time', running_time))
+        a = (running_time % period)/period * 2*np.pi
         return x,y,a
     else:
         primairy_platform = platforms[0]
         xt,yt,at = primairy_platform.xpos, primairy_platform.ypos, primairy_platform.attitude
-        
-        x = r*np.cos(at) + xt
-        y = r*np.sin(at) + yt
-        a = (-at)%(2*np.pi)
 
-        return x,y,a
+        cycle_progress = (running_time%period)/period
+
+        # x = -r*np.cos(cycle_progress * 2* np.pi) + xt
+        # y = r*np.sin(cycle_progress * 2* np.pi) + yt
+
+        x = -r*np.cos(at) + xt
+        y =  r*np.sin(at) + yt
+
+        a = at
+        return x, y, a
+        # primairy_platform = platforms[0]
+        # xt,yt,at = primairy_platform.xpos, primairy_platform.ypos, primairy_platform.attitude
+        #
+        # x = r*np.cos(at) + xt
+        # y = r*np.sin(at) + yt
+        # a = (-at)%(2*np.pi)
+        # return x,y,a
 
 
 def swarm_full_test(platforms, idx, running_time):
     # properties
-    center_pos = [-2,3]
-    period = 30
-    spin_factor = 2
+    center_pos = [-0.22,-0.2]
+    period = 50
+    f1 = 2
+    f2 = 3
 
-    r1 = 0.3
-    r2 = 0.8
+    r1 = 0.5
+    r2 = 1.1
 
     if idx == 0: # perform absolute motion
         cycle_progress = ((running_time/period)%1)
-        x,y = r1*np.cos(2*np.pi*cycle_progress) + center_pos[0], r1*np.sin(2*np.pi*cycle_progress) + center_pos[1]
-        a = (((running_time*spin_factor)/period)%1) * 2*np.pi
+        x,y = r1*np.cos(2*np.pi*cycle_progress * f1) + center_pos[0], r1*np.sin(2*np.pi*cycle_progress * f1) + center_pos[1]
+        a = 0# -(((running_time*spin_factor)/period)%1) * 2*np.pi
 
         return x,y,a
 
@@ -49,9 +62,14 @@ def swarm_full_test(platforms, idx, running_time):
         primairy_platform = platforms[0]
         xt,yt,at = primairy_platform.xpos, primairy_platform.ypos, primairy_platform.attitude
 
-        x = r2*np.cos(at) + xt
-        y = r2*np.sin(at) + yt
-        a = (-at)%(2*np.pi)
+        # x = r2*np.cos(at) + xt
+        # y = r2*np.sin(at) + yt
+
+        cycle_progress = (running_time % period) / period
+
+        x = -r2*np.cos(cycle_progress * 2* np.pi * f2) + xt
+        y = r2*np.sin(cycle_progress * 2* np.pi *  f2) + yt
+        a = 0 #(-at)%(2*np.pi)
 
         return x,y,a
 

@@ -38,7 +38,7 @@ def receive_new_frame(data_dict):
 
 def receive_rigid_body_frame(new_id, position, rotation ):
     #print( "Received frame for rigid body", new_id )
-    print( "Received frame for rigid body", new_id," ",position," ",rotation )
+#    print( "Received frame for rigid body", new_id," ",position," ",rotation )
     if new_id == rigid_body_list[0][0]:
         rigid_body_list[0] = [new_id, position, rotation]
     elif new_id == rigid_body_list[1][0]:

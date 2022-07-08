@@ -9,12 +9,12 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 from communication.wifi_api import open_serial, stream_to, get_ports_dict
-from control.default_dynamics import circle_motion, swarm_circle, calibrate_directions, transform_frame, stay_at_position, swarm_relative_test
+from control.default_dynamics import circle_motion, swarm_circle, calibrate_directions, transform_frame, stay_at_position, swarm_relative_test, swarm_full_test
 from communication.motive_api import get_body_package_data, setup_client
 
 
 class Platform:    
-    def __init__(self, name:str, idx, com_port:str,  motive_id:int, control_gains:dict, xpos:float=.0, ypos:float=.0, attitude:float=.0, transform_set=[0,0,0], update_freq:float=0.1, debug=False, max_lin_vel=0.2, max_ang_vel=0.8*np.pi) -> None:
+    def __init__(self, name:str, idx, com_port:str,  motive_id:int, control_gains:dict, xpos:float=.0, ypos:float=.0, attitude:float=.0, transform_set=[0,0,0], update_freq:float=0.1, debug=False, max_lin_vel=0.4, max_ang_vel=0.8*np.pi) -> None:
         self.name = name
 
         # default position and orientation
@@ -276,9 +276,9 @@ class Platform:
             ey = point_heading[1] - self.ypos
             ea_raw = (point_heading[2] - self.attitude)
             if abs(ea_raw) > np.pi:
-                ea = (ea_raw - np.sign(ea_raw)*2*np.pi) % (2*np.pi)
+                ea = (ea_raw - np.sign(ea_raw)*np.pi) % (2*np.pi)
             else:
-                ea = ea_raw
+                ea = -ea_raw
 
             # Compute control commands
             ux = self.x_controller.control(ex, delta_time)
@@ -289,8 +289,6 @@ class Platform:
             required_direction  = (np.arctan2(ux, uy) - self.attitude) % (2*np.pi)
             required_speed      = np.sqrt(ux**2 + uy**2)/delta_time * 1e3
             required_rotation_rate   = ua/delta_time
-
-
 
             # Impose maximum control commands (SAFETY FEATURE)
             command_speed = np.sign(required_speed) * min(abs(required_speed), 1e3*self.max_lin_vel)
@@ -377,7 +375,7 @@ class PID:
 
 
 class Swarm:
-    def __init__(self, behaviour_name, formation_com_ports, formation_body_ids, gains, local_offset, initial_positions=[], update_freq:float=0.1, wait_time=5, debug=False, logging=False):
+    def __init__(self, behaviour_name, formation_com_ports, formation_body_ids, gains, local_offset, initial_positions=[], update_freq:float=0.1, wait_time=0, debug=False, logging=False):
         self.local_offset = local_offset
 
         self.update_freq = update_freq
@@ -422,8 +420,10 @@ class Swarm:
 
         if self.logging:
             now = datetime.now()
-            timestamp = now.strftime("%Y-%m-%d_%H:%M:%S")
-            self.log_file = open("logs/"+behaviour_name.replace(" ","")+"_"+timestamp+".csv", 'a')
+            timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
+            filename = "logs/"+behaviour_name.replace(" ","")+"_"+timestamp+".csv"
+            print("Log File: ", filename)
+            self.log_file = open(filename, 'a')
 
             self.log_file.write(behaviour_name+" "+ timestamp + "\n")
 
@@ -434,7 +434,7 @@ class Swarm:
                 self.log_file.write("a = %s \n" % platform.a_gains)
 
             #header information
-            self.log_file.write("\n\nx,\ty,\ta,\tx_tar,\ty_tar,\ta_tar,\tV_com,\tH_com,\tA_com\n")
+            self.log_file.write("\n\nidx\t,t,\tx,\ty,\ta,\tx_tar,\ty_tar,\ta_tar,\tV_com,\tH_com,\tA_com\n")
 
 
 
@@ -499,7 +499,7 @@ class Swarm:
                 ey = y_setpoint - platform.ypos
                 ea_raw = (a_setpoint - platform.attitude)
                 if abs(ea_raw) > np.pi:
-                    ea = (ea_raw - np.sign(ea_raw)*2*np.pi) % (2*np.pi)
+                    ea = (ea_raw - 2*np.pi) % (2*np.pi)
                 else:
                     ea = ea_raw
 
@@ -509,13 +509,13 @@ class Swarm:
                 ua = platform.a_controller.control(ea, delta_time)
 
                 # Compute required control commands
-                required_direction  = (np.arctan2(ux, uy) + np.pi/2 - platform.attitude) % (2*np.pi)
+                required_direction  = (np.arctan2(ux, uy) - platform.attitude) % (2*np.pi)
                 required_speed      = np.sqrt(ux**2 + uy**2)/delta_time * 1e3
                 required_rotation   = ua/delta_time
 
                 # Impose maximum control commands (SAFETY FEATURE)
-                command_speed = np.sign(required_speed) * min(abs(required_speed), 1e3*platform.max_lin_vel)
-                command_rotation = np.sign(required_rotation) * min(abs(required_rotation), platform.max_lin_vel)
+                command_speed = np.sign(required_speed) * min(abs(required_speed), 1e3 * platform.max_lin_vel)
+                command_rotation = np.sign(required_rotation) * min(abs(required_rotation), platform.max_ang_vel)
 
                 # Send control commands to Platform
                 data_to_send = [command_speed, required_direction, command_rotation]
@@ -523,14 +523,33 @@ class Swarm:
 
                 if platform.debug:
                     pass
-                    #self.console_print("data", data_to_send)
-                    platform.console_print("Actual pos: : ", [round(platform.xpos, 3), round(platform.ypos, 3)])
-                    platform.console_print("Target pos: : ", [round(x_setpoint, 3), round(y_setpoint,3)])
-                    #self.console_print("deltas : ", [round(ex, 4), round(ey, 4), round(ea, 4)])
-                    #self.console_print("commands : ", [round(ux, 4), round(uy, 4), round(ua, 4)]
+                    platform.console_print("data send:  ", data_to_send)
+                    platform.console_print("Actual pos: ", [round(platform.xpos, 3), round(platform.ypos, 3)])
+                    platform.console_print("Target pos: ", [round(x_setpoint, 3), round(y_setpoint,3)])
+                    #platform.console_print("deltas : ", [round(ex, 4), round(ey, 4), round(ea, 4)])
+                    #platform.console_print("commands : ", [round(ux, 4), round(uy, 4), round(ua, 4)])
 
                 if self.logging:
-                    pass
+                    "\n\nidx\t,t,\tx,\ty,\ta,\tx_tar,\ty_tar,\ta_tar,\tV_com,\tH_com,\tA_com\n"
+                    # info
+                    self.log_file.write(str(platform.name)+",\t")
+                    self.log_file.write(str(current_time)+ ",\t")
+
+                    # actual pos
+                    self.log_file.write(str(platform.xpos) + ",\t")
+                    self.log_file.write(str(platform.ypos) + ",\t")
+                    self.log_file.write(str(platform.attitude) + ",\t")
+
+                    # target pos
+                    self.log_file.write(str(x_setpoint) + ",\t")
+                    self.log_file.write(str(y_setpoint) + ",\t")
+                    self.log_file.write(str(a_setpoint) + ",\t")
+
+                    # target pos
+                    self.log_file.write(str(command_speed) + ",\t")
+                    self.log_file.write(str(required_direction) + ",\t")
+                    self.log_file.write(str(command_rotation))
+                    self.log_file.write("\n")
 
 
         
@@ -642,11 +661,11 @@ def main(selected_pattern, selected_ports, rigid_body_ids, gains, plotting=True,
     
     while True:
 
-        # formation[1].control_motion(selected_pattern, repeat=True)
-        # formation[0].control_motion(selected_pattern, repeat=True)
+        formation[1].control_motion(selected_pattern, repeat=True)
+        formation[0].control_motion(selected_pattern, repeat=True)
 
-        formation[0].go_to_point([1,-0.4,0])
-        formation[1].go_to_point([-1.3,-0.4,0])
+        formation[0].go_to_point([-2,3,0])
+        formation[1].go_to_point([-2.5,3,0])
         
         if plotting:
             plt.pause(1e-12)
@@ -654,7 +673,7 @@ def main(selected_pattern, selected_ports, rigid_body_ids, gains, plotting=True,
 
 
 # code execution for this file
-def main_swarm(behaviour, selected_ports, rigid_body_ids, gains, debug=True, logging=True):
+def main_swarm(swarmname, behaviour, selected_ports, rigid_body_ids, gains, debug=True, logging=True):
 
     # create motive thread
     setup_client()
@@ -674,30 +693,33 @@ def main_swarm(behaviour, selected_ports, rigid_body_ids, gains, debug=True, log
     local_offset = [0,0,0] # get_local_offset()
 
     #formation = [Platform(f"Robot-{i+1}", i, selected_ports[i], rigid_body_ids[i], gains, xpos=x0[i], ypos=y0[i], attitude=a0[i], transform_set=local_offset ,debug=debug) for i in range(formation_size)]
-    formation = Swarm(selected_ports, rigid_body_ids, gains, local_offset, update_freq=0.1, wait_time=5, debug=debug, logging=logging)
+    formation = Swarm(swarmname, selected_ports, rigid_body_ids, gains, local_offset, update_freq=0.1, debug=debug, logging=logging)
 
 
     while True:
         try:
             formation.run(behaviour)
-        except KeyboardInterrupt:
+        except:
+
             formation.log_file.close()
+            print("File Closed")
+            quit()
 
 
 if __name__ == "__main__":
 
     # SWARM SETUP
     motion = stay_at_position
-    behaviour = swarm_relative_test
-    selected_ports = ["COM3", "COM4"] #["/dev/cu.usbserial-1440", "/dev/cu.usbserial-1450"]
+    behaviour = swarm_full_test
+    selected_ports = ["COM4", "COM3"] #["/dev/cu.usbserial-1440", "/dev/cu.usbserial-1450"]
     rigid_body_ids = [1, 2]
     
-    gains={ 'x' : [0.5, 0.013, 0.030], #FIXME: TUNE
-            'y' : [0.5, 0.013, 0.030],
-            'a' : [0.3, 0.002,0.015]}
+    gains={ 'x' : [0.5, 0.009, 0.030], #FIXME: TUNE
+            'y' : [0.5, 0.009, 0.030],
+            'a' : [0.25, 0.003, 0.017]}
 
     # EXECUTE
-    main_swarm("StayAtPos", behaviour, selected_ports, rigid_body_ids, gains, debug=False, logging=True)
+    main_swarm("No Rotation Demo", behaviour, selected_ports, rigid_body_ids, gains, debug=True, logging=True)
     #main(motion, selected_ports, rigid_body_ids, gains, plotting=False, debug=True)
         # formation[0].test_command(120) #ROBOT 1
         # formation[1].test_command(120) #ROBOT 2
