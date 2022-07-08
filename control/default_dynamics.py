@@ -6,6 +6,31 @@ import matplotlib.pyplot as plt
 
 
 
+def swarm_relative_test(platforms, idx, running_time):   
+    # properties
+    hold_position = [0,0]
+    period = 20
+    
+    r = 0.9
+    
+    if idx == 0: # perform absolute motion
+        x,y = hold_position
+        a = ((running_time/period)%1) * 2*np.pi
+        
+        return x,y,a
+    else:
+        primairy_platform = platforms[0]
+        xt,yt,at = primairy_platform.xpos, primairy_platform.ypos, primairy_platform.attitude
+        
+        x = r*np.cos(at) + xt
+        y = r*np.sin(at) + yt
+        a = (-at)%(2*np.pi)
+        
+        return x,y,a
+        
+    
+
+
 def transform_frame(data, transform=[0,0,0]):
     t_data, x_data, y_data, a_data = data
     dx, dy, da = transform
@@ -26,8 +51,9 @@ def stay_at_position(dt = 0.1):
     
     return [time_set, x_pos, y_pos, a_set], [time_set, x_pos, y_pos, a_set]
     
-
     
+
+
 
 def circle_around_point(point_pos, point_vel, time, radius, period, sign=1, initial_time=0, initial_angle=0):
     center_px, center_py = point_pos

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 from communication.wifi_api import open_serial, stream_to, get_ports_dict
-from control.default_dynamics import circle_motion, swarm_circle, calibrate_directions, transform_frame, stay_at_position
+from control.default_dynamics import circle_motion, swarm_circle, calibrate_directions, transform_frame, stay_at_position, swarm_relative_test
 from communication.motive_api import get_body_package_data, setup_client
 
 
@@ -375,12 +375,17 @@ class PID:
         self.error_sum = 0
 
 
-class swarm:
-    def __init__(self, formation_com_ports, formation_body_ids, gains, local_offset, initial_positions=[], update_freq:float=0.1, debug=False):
+class Swarm:
+    def __init__(self, formation_com_ports, formation_body_ids, gains, local_offset, initial_positions=[], update_freq:float=0.1, wait_time=5, debug=False, logging=False):
         self.local_offset = local_offset
 
         self.update_freq = update_freq
-        self.time_of_last_update = time.time()
+
+
+        current_time = time.time()
+        self.wait_time = wait_time
+        self.time_of_last_update = current_time
+        self.start_time = current_time + self.wait_time
 
         self.debug = debug
 
@@ -445,14 +450,65 @@ class swarm:
 
         return relative_headings
 
+    def get_relative_position_heading(self):
+        pass
 
 
-    def run(self):
+    def run(self, selected_behaviour):
         current_time = time.time()
         delta_time = current_time - self.time_of_last_update
 
         if delta_time >= self.update_freq():
-            pass
+            self.time_of_last_update = current_time
+            running_time = current_time - self.start_time
+
+            for idx, platform in enumerate(self.platforms):
+
+                # update locations
+                platform.get_location()
+
+                # get target locations
+                x_setpoint, y_setpoint, a_setpoint = selected_behaviour(self.platforms, idx, running_time)
+
+                # Computes errors
+                ex = x_setpoint - platform.xpos
+                ey = y_setpoint - platform.ypos
+                ea_raw = (a_setpoint - platform.attitude)
+                if abs(ea_raw) > np.pi:
+                    ea = (ea_raw - np.sign(ea_raw)*2*np.pi) % (2*np.pi)
+                else:
+                    ea = ea_raw
+
+                # Compute control commands
+                ux = platform.x_controller.control(ex, delta_time)
+                uy = platform.y_controller.control(ey, delta_time)
+                ua = platform.a_controller.control(ea, delta_time)
+
+                # Compute required control commands
+                required_direction  = (np.arctan2(ux, uy) + np.pi/2 - self.attitude) % (2*np.pi)
+                required_speed      = np.sqrt(ux**2 + uy**2)/delta_time * 1e3
+                required_rotation   = ua/delta_time
+
+                # Impose maximum control commands (SAFETY FEATURE)
+                command_speed = np.sign(required_speed) * min(abs(required_speed), 1e3*platform.max_lin_vel)
+                command_rotation = np.sign(required_rotation) * min(abs(required_rotation), platform.max_lin_vel)
+
+                # Send control commands to Platform
+                data_to_send = [command_speed, required_direction, command_rotation]
+                stream_to(data_to_send, platform.ser_com)
+
+                if platform.debug:
+                    pass
+                    #self.console_print("data", data_to_send)
+                    platform.console_print("Actual pos: : ", [round(self.xpos, 3), round(self.ypos, 3)])
+                    platform.console_print("Target pos: : ", [round(x_setpoint, 3), round(y_setpoint,3)])
+                    #self.console_print("deltas : ", [round(ex, 4), round(ey, 4), round(ea, 4)])
+                    #self.console_print("commands : ", [round(ux, 4), round(uy, 4), round(ua, 4)]
+
+                if self.logging:
+                    pass
+
+
         
 
 
@@ -571,11 +627,42 @@ def main(selected_pattern, selected_ports, rigid_body_ids, gains, plotting=True,
         if plotting:
             plt.pause(1e-12)
             
-        
+
+
+# code execution for this file
+def main_swarm(behaviour, selected_ports, rigid_body_ids, gains, debug=True, logging=True):
+
+    # create motive thread
+    setup_client()
+
+    # create robots
+    for port, name in get_ports_dict().items():
+        print(port, name)
+
+    formation_size = len(rigid_body_ids)
+
+    def get_local_offset():
+        anchor = Platform(f"anchor", 0, None, rigid_body_ids[0], gains, debug=False) # TODO: add achor robot mocap info
+        anchor.get_location()
+
+        return anchor.xpos, anchor.ypos, anchor.attitude
+
+    local_offset = [0,0,0] # get_local_offset()
+
+    #formation = [Platform(f"Robot-{i+1}", i, selected_ports[i], rigid_body_ids[i], gains, xpos=x0[i], ypos=y0[i], attitude=a0[i], transform_set=local_offset ,debug=debug) for i in range(formation_size)]
+    formation = Swarm(selected_ports, rigid_body_ids, gains, local_offset, initial_positions=[], update_freq=0.1, wait_time=5, debug=debug, logging=logging)
+
+
+    while True:
+
+        formation.run(behaviour)
+
+
 if __name__ == "__main__":
 
     # SWARM SETUP
-    motion = swarm_circle
+    motion = stay_at_position
+    behaviour = swarm_relative_test
     selected_ports = ["COM3", "COM4"] #["/dev/cu.usbserial-1440", "/dev/cu.usbserial-1450"]
     rigid_body_ids = [1, 2]
     
@@ -584,9 +671,11 @@ if __name__ == "__main__":
             'a' : [0.3, 0.002,0.015]}
 
     # EXECUTE
-    main(motion, selected_ports, rigid_body_ids, gains, plotting=False, debug=True)
+    main_swarm(behaviour, selected_ports, rigid_body_ids, gains, debug=False, logging=False)
+    #main(motion, selected_ports, rigid_body_ids, gains, plotting=False, debug=True)
         # formation[0].test_command(120) #ROBOT 1
         # formation[1].test_command(120) #ROBOT 2
+
 
     print("STOPPED")
                 
