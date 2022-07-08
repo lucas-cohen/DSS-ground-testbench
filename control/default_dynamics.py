@@ -11,7 +11,7 @@ def swarm_relative_test(platforms, idx, running_time):
     hold_position = [0,0]
     period = 20
     
-    r = 1.0
+    r = 0.9
     
     if idx == 0: # perform absolute motion
         x,y = hold_position
