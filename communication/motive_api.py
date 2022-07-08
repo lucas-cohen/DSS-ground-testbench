@@ -20,31 +20,30 @@ rigid_body_list = [[1, [0.0,0.0,0.0], [0.0,0.0,0.0,0.0]],
 # This is a callback function that gets connected to the NatNet client
 # and called once per mocap frame.
 def receive_new_frame(data_dict):
+#   order_list=[ "frameNumber", "markerSetCount", "unlabeledMarkersCount", "rigidBodyCount", "skeletonCount",
+#               "labeledMarkerCount", "timecode", "timecodeSub", "timestamp", "isRecording", "trackedModelsChanged" ]
+#   dump_args = False
+#   if dump_args == True:
+#       out_string = "    "
+#       for key in data_dict:
+#           out_string += key + "="
+#           if key in data_dict :
+#               out_string += data_dict[key] + " "
+#           out_string+="/"
+#       print(out_string)
     pass
- #  order_list=[ "frameNumber", "markerSetCount", "unlabeledMarkersCount", "rigidBodyCount", "skeletonCount",
- #              "labeledMarkerCount", "timecode", "timecodeSub", "timestamp", "isRecording", "trackedModelsChanged" ]
- #  dump_args = False
- #  if dump_args == True:
- #      out_string = "    "
- #      for key in data_dict:
- #          out_string += key + "="
- #          if key in data_dict :
- #              out_string += data_dict[key] + " "
- #          out_string+="/"
- #      print(out_string)
-
 # This is a callback function that gets connected to the NatNet client. It is called once per rigid body per frame
 
 
 
 def receive_rigid_body_frame(new_id, position, rotation ):
     #print( "Received frame for rigid body", new_id )
-    #print( "Received frame for rigid body", new_id," ",position," ",rotation )
+    print( "Received frame for rigid body", new_id," ",position," ",rotation )
     if new_id == rigid_body_list[0][0]:
         rigid_body_list[0] = [new_id, position, rotation]
     elif new_id == rigid_body_list[1][0]:
         rigid_body_list[1] = [new_id, position, rotation]
-    pass
+    return
 
 
 def add_lists(totals, totals_tmp):
@@ -258,7 +257,7 @@ def setup_client():
 
     print("Received rigid body test 1", rigid_body_list)
     time.sleep(2)
-    print("Received rigid body test 1",rigid_body_list)
+    print("Received rigid body test 2",rigid_body_list)
     print("____________________________")
     print("Motive connection completed...")
 

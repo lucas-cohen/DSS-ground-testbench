@@ -63,7 +63,7 @@ class NatNetClient:
     # print_level = 0 off
     # print_level = 1 on
     # print_level = >1 on / print every nth mocap frame
-    print_level = 0
+    print_level = 1
 
     def __init__(self):
         # Change this value to the IP address of the NatNet server.
@@ -74,6 +74,7 @@ class NatNetClient:
 
         # This should match the multicast address listed in Motive's streaming settings.
         self.multicast_address = "224.0.0.1"
+        #self.multicast_address = "239.255.42.99"
 
         # NatNet Command channel
         self.command_port = 1510

@@ -47,13 +47,13 @@ rigid_body_list = [[1, 0, 0],
                     [19, 0, 0]]
 
 def receive_rigid_body_frame(new_id, position, rotation ):
-    #print( "Received frame for rigid body", new_id )
+    print( "Received frame for rigid body", new_id )
     #print( "Received frame for rigid body", new_id," ",position," ",rotation )
-    if new_id == rigid_body_list[0][0]:
-        rigid_body_list[0] = [new_id, position, rotation]
-    elif new_id == rigid_body_list[1][0]:
-        rigid_body_list[1] = [new_id, position, rotation]
-    pass
+    #if new_id == rigid_body_list[0][0]:
+    #    rigid_body_list[0] = [new_id, position, rotation]
+    #elif new_id == rigid_body_list[1][0]:
+    #    rigid_body_list[1] = [new_id, position, rotation]
+    #pass
 
 
 def add_lists(totals, totals_tmp):
@@ -163,7 +163,7 @@ def my_parse_args(arg_list, args_dict):
 def run():
 
     optionsDict = {}
-    optionsDict["clientAddress"] = "145.94.177.206"
+    optionsDict["clientAddress"] = "145.94.179.118"
     optionsDict["serverAddress"] = "192.168.209.81"
     optionsDict["use_multicast"] = True
 

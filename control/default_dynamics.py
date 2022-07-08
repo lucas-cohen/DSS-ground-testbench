@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 def swarm_relative_test(platforms, idx, running_time):   
     # properties
-    hold_position = [0,0]
+    hold_position = [0.0, 0.0]
     period = 20
     
     r = 0.9
