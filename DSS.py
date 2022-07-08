@@ -384,7 +384,7 @@ class PID:
 
 
 class Swarm:
-    def __init__(self, formation_com_ports, formation_body_ids, gains, local_offset, initial_positions=[], update_freq:float=0.1, wait_time=5, debug=False):
+    def __init__(self, formation_com_ports, formation_body_ids, gains, local_offset, initial_positions=[], update_freq:float=0.1, wait_time=5, debug=False, logging=False):
         self.local_offset = local_offset
 
         self.update_freq = update_freq
@@ -505,13 +505,15 @@ class Swarm:
                 data_to_send = [command_speed, required_direction, command_rotation]
                 stream_to(data_to_send, platform.ser_com)
 
-            if self.debug:
-                pass
-                #self.console_print("data", data_to_send)
-                platform.console_print("Actual pos: : ", [round(self.xpos, 3), round(self.ypos, 3)])
-                platform.console_print("Target pos: : ", [round(x_setpoint, 3), round(y_setpoint,3)])
-                #self.console_print("deltas : ", [round(ex, 4), round(ey, 4), round(ea, 4)])
-                #self.console_print("commands : ", [round(ux, 4), round(uy, 4), round(ua, 4)]        
+                if platform.debug:
+                    pass
+                    #self.console_print("data", data_to_send)
+                    platform.console_print("Actual pos: : ", [round(self.xpos, 3), round(self.ypos, 3)])
+                    platform.console_print("Target pos: : ", [round(x_setpoint, 3), round(y_setpoint,3)])
+                    #self.console_print("deltas : ", [round(ex, 4), round(ey, 4), round(ea, 4)])
+                    #self.console_print("commands : ", [round(ux, 4), round(uy, 4), round(ua, 4)]       
+                    
+                if self.logging 
         
         
         
@@ -636,7 +638,7 @@ def main(selected_pattern, selected_ports, rigid_body_ids, gains, plotting=True,
             
 
 # code execution for this file
-def main_swarm(behaviour, selected_ports, rigid_body_ids, gains, plotting=True, debug=True):
+def main_swarm(behaviour, selected_ports, rigid_body_ids, gains, debug=True, logging=True):
     
     # create motive thread
     setup_client()
@@ -656,7 +658,7 @@ def main_swarm(behaviour, selected_ports, rigid_body_ids, gains, plotting=True, 
     local_offset = [0,0,0] # get_local_offset()
 
     #formation = [Platform(f"Robot-{i+1}", i, selected_ports[i], rigid_body_ids[i], gains, xpos=x0[i], ypos=y0[i], attitude=a0[i], transform_set=local_offset ,debug=debug) for i in range(formation_size)]
-    formation = Swarm(selected_ports, rigid_body_ids, gains, local_offset, initial_positions=[], update_freq=0.1, wait_time=5, debug=False)
+    formation = Swarm(selected_ports, rigid_body_ids, gains, local_offset, initial_positions=[], update_freq=0.1, wait_time=5, debug=debug, logging=logging)
     
     
     while True:
@@ -678,7 +680,7 @@ if __name__ == "__main__":
 
     # EXECUTE
     #main(motion, selected_ports, rigid_body_ids, gains, plotting=True, debug=False)
-    main_swarm(behaviour, selected_ports, rigid_body_ids, gains, plotting=True, debug=False))
+    main_swarm(behaviour, selected_ports, rigid_body_ids, gains, debug=False, logging=False)
         # formation[0].test_command(120) #ROBOT 1
         # formation[1].test_command(120) #ROBOT 2
         
