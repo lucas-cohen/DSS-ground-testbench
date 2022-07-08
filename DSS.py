@@ -697,7 +697,7 @@ if __name__ == "__main__":
             'a' : [0.3, 0.002,0.015]}
 
     # EXECUTE
-    main_swarm("StayAtPos", behaviour, selected_ports, rigid_body_ids, gains, debug=False, logging=False)
+    main_swarm("StayAtPos", behaviour, selected_ports, rigid_body_ids, gains, debug=False, logging=True)
     #main(motion, selected_ports, rigid_body_ids, gains, plotting=False, debug=True)
         # formation[0].test_command(120) #ROBOT 1
         # formation[1].test_command(120) #ROBOT 2
