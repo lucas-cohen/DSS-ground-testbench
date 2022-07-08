@@ -28,7 +28,32 @@ def swarm_relative_test(platforms, idx, running_time):
         
         return x,y,a
         
+
+def swarm_full_test(platforms, idx, running_time):
+    # properties
+    center_pos = [0,0]
+    period = 30
+    spin_factor = 2
     
+    r1 = 0.3
+    r2 = 0.8
+    
+    if idx == 0: # perform absolute motion
+        cycle_progress = ((running_time/period)%1)
+        x,y = r1*np.cos(2*np.pi*cycle_progress) + center_pos[0], r1*np.sin(2*np.pi*cycle_progress) + center_pos[1]
+        a = (((running_time*spin_factor)/period)%1) * 2*np.pi
+        
+        return x,y,a
+    
+    else:
+        primairy_platform = platforms[0]
+        xt,yt,at = primairy_platform.xpos, primairy_platform.ypos, primairy_platform.attitude
+        
+        x = r2*np.cos(at) + xt
+        y = r2*np.sin(at) + yt
+        a = (-at)%(2*np.pi)
+        
+        return x,y,a
 
 
 def transform_frame(data, transform=[0,0,0]):
