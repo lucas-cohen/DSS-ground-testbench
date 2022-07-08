@@ -2,6 +2,7 @@
 
 import numpy as np
 import time
+from datetime import datetime
 
 import matplotlib; matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
@@ -376,7 +377,7 @@ class PID:
 
 
 class Swarm:
-    def __init__(self, formation_com_ports, formation_body_ids, gains, local_offset, initial_positions=[], update_freq:float=0.1, wait_time=5, debug=False, logging=False):
+    def __init__(self, behaviour_name, formation_com_ports, formation_body_ids, gains, local_offset, initial_positions=[], update_freq:float=0.1, wait_time=5, debug=False, logging=False):
         self.local_offset = local_offset
 
         self.update_freq = update_freq
@@ -389,9 +390,10 @@ class Swarm:
 
         self.debug = debug
         self.logging = logging
+        self.behaviour_name = behaviour_name
 
         # create motive thread
-        setup_client()
+        # setup_client()
 
         for port, name in get_ports_dict().items():
             print(port, name)
@@ -416,6 +418,27 @@ class Swarm:
 
         # create final set of platforms
         self.platforms = [Platform(f"Robot-{i+1}", i, formation_com_ports[i], formation_body_ids[i], gains, xpos=x0[i], ypos=y0[i], attitude=a0[i], transform_set=self.local_offset ,debug=debug) for i in range(self.formation_size)]
+
+
+        if self.logging:
+            now = datetime.now()
+            timestamp = now.strftime("%Y-%m-%d_%H:%M:%S")
+            self.log_file = open("logs/"+behaviour_name.replace(" ","")+"_"+timestamp+".csv", 'a')
+
+            self.log_file.write(behaviour_name+" "+ timestamp + "\n")
+
+            for platform in self.platforms:
+                self.log_file.write("\n%s gains: \n" % platform.name)
+                self.log_file.write("x = %s \n" % platform.x_gains)
+                self.log_file.write("y = %s \n" % platform.y_gains)
+                self.log_file.write("a = %s \n" % platform.a_gains)
+
+            #header information
+            self.log_file.write("\n\nx,\ty,\ta,\tx_tar,\ty_tar,\ta_tar,\tV_com,\tH_com,\tA_com\n")
+
+
+
+
 
 
     def get_relative_position(self, reference_body_idx, do_update=False):
@@ -655,8 +678,10 @@ def main_swarm(behaviour, selected_ports, rigid_body_ids, gains, debug=True, log
 
 
     while True:
-
-        formation.run(behaviour)
+        try:
+            formation.run(behaviour)
+        except KeyboardInterrupt:
+            formation.log_file.close()
 
 
 if __name__ == "__main__":
@@ -672,8 +697,8 @@ if __name__ == "__main__":
             'a' : [0.3, 0.002,0.015]}
 
     # EXECUTE
-    #main_swarm(behaviour, selected_ports, rigid_body_ids, gains, debug=True, logging=False)
-    main(motion, selected_ports, rigid_body_ids, gains, plotting=False, debug=True)
+    main_swarm("StayAtPos", behaviour, selected_ports, rigid_body_ids, gains, debug=False, logging=True)
+    #main(motion, selected_ports, rigid_body_ids, gains, plotting=False, debug=True)
         # formation[0].test_command(120) #ROBOT 1
         # formation[1].test_command(120) #ROBOT 2
 
