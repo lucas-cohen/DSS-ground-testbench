@@ -13,7 +13,7 @@ from communication.motive_api import get_body_package_data, setup_client
 
 
 class Platform:    
-    def __init__(self, name:str, idx, com_port:str,  motive_id:int, control_gains:dict, xpos:float=.0, ypos:float=.0, attitude:float=.0, transform_set=[0,0,0], update_freq:float=0.1, debug=False, max_lin_vel=0.05, max_ang_vel=0.1*np.pi) -> None:
+    def __init__(self, name:str, idx, com_port:str,  motive_id:int, control_gains:dict, xpos:float=.0, ypos:float=.0, attitude:float=.0, transform_set=[0,0,0], update_freq:float=0.1, debug=False, max_lin_vel=0.2, max_ang_vel=0.8*np.pi) -> None:
         self.name = name
 
         # default position and orientation
@@ -65,7 +65,7 @@ class Platform:
 
     
     def console_print(self, name, val):
-        if self.debug and self.name == "Robot-1":
+        if self.debug:
             print(self.name, "|",name,val)
     #            print(f"{self.name}: {name}={val}")
     
@@ -201,7 +201,7 @@ class Platform:
 
 
     def control_motion(self, dynamics, repeat=False):
-        time_set, x_set, y_set, a_set = dynamics(dt=self.update_freq)[self.robot_idx]  #transform_frame(dynamics(dt=self.update_freq)[self.robot_idx], self.tranform_set)
+        time_set, x_set, y_set, a_set = transform_frame(dynamics(dt=self.update_freq)[self.robot_idx], self.tranform_set)
 
         current_time = time.time()
         delta_time = current_time - self.time_of_last_update
@@ -221,37 +221,30 @@ class Platform:
             else:
                 ea = ea_raw
 
-            # set setpoint
-            # self.x_controller.setpoint = x_set[self.temp_loop_idx]
-            # self.y_controller.setpoint = y_set[self.temp_loop_idx]
-            # self.a_controller.setpoint = a_set[self.temp_loop_idx]
-
             # Compute control commands
             ux = self.x_controller.control(ex, delta_time)
             uy = self.y_controller.control(ey, delta_time)
             ua = self.a_controller.control(ea, delta_time)
 
             # Compute required control commands
-            required_direction  = (np.arctan2(ux, uy) + np.pi/2 - self.attitude) % (2*np.pi)
-            required_speed      = np.sqrt(ux**2 + uy**2)/delta_time * 1e3
-            required_rotation   = ua/delta_time
-
-            if self.debug:
-                self.console_print("speed: ", round(required_speed,4))
+            required_direction = (np.arctan2(ux, uy) - self.attitude) % (2 * np.pi)
+            required_speed = np.sqrt(ux ** 2 + uy ** 2) / delta_time * 1e3
+            required_rotation_rate = ua / delta_time
 
             # Impose maximum control commands (SAFETY FEATURE)
-            command_speed = np.sign(required_speed) * min(abs(required_speed), 1e3*self.max_lin_vel)
-            command_rotation = np.sign(required_rotation) * min(abs(required_rotation), self.max_lin_vel)
+            command_speed = np.sign(required_speed) * min(abs(required_speed), 1e3 * self.max_lin_vel)
+            command_rotation_rate = np.sign(required_rotation_rate) * min(abs(required_rotation_rate),
+                                                                          self.max_ang_vel)
 
             # Send control commands to Platform
-            data_to_send = [required_speed, required_direction, required_rotation] #command_rotation] #FIXME!
+            data_to_send = [command_speed, required_direction, command_rotation_rate]  # command_rotation] #FIXME!
             stream_to(data_to_send, self.ser_com)
 
             if self.debug:
                 pass
                 #self.console_print("data", data_to_send)
-                #self.console_print("Actual pos: : ", [round(self.xpos, 3), round(self.ypos, 3)])
-                #self.console_print("Target pos: : ", [round(x_set[self.temp_loop_idx], 3), round(y_set[self.temp_loop_idx],3)])
+                self.console_print("Actual pos: : ", [round(self.xpos, 3), round(self.ypos, 3)])
+                self.console_print("Target pos: : ", [round(x_set[self.temp_loop_idx], 3), round(y_set[self.temp_loop_idx],3)])
                 #self.console_print("deltas : ", [round(ex, 4), round(ey, 4), round(ea, 4)])
                 #self.console_print("commands : ", [round(ux, 4), round(uy, 4), round(ua, 4)])
 
@@ -292,7 +285,7 @@ class Platform:
             ua = self.a_controller.control(ea, delta_time)
 
             # Compute required control commands
-            required_direction  = (np.arctan2(ux, uy) + np.pi/2 - self.attitude) % (2*np.pi)
+            required_direction  = (np.arctan2(ux, uy) - self.attitude) % (2*np.pi)
             required_speed      = np.sqrt(ux**2 + uy**2)/delta_time * 1e3
             required_rotation_rate   = ua/delta_time
 
@@ -300,8 +293,7 @@ class Platform:
 
             # Impose maximum control commands (SAFETY FEATURE)
             command_speed = np.sign(required_speed) * min(abs(required_speed), 1e3*self.max_lin_vel)
-            command_rotation_rate = 0
-            # np.sign(required_rotation_rate) * min(abs(required_rotation_rate), self.max_ang_vel)
+            command_rotation_rate = np.sign(required_rotation_rate) * min(abs(required_rotation_rate), self.max_ang_vel)
 
             # Send control commands to Platform
             data_to_send = [command_speed, required_direction, command_rotation_rate] #command_rotation] #FIXME!
@@ -483,20 +475,19 @@ def main(selected_pattern, selected_ports, rigid_body_ids, gains, plotting=True,
     y0 = [platform1_set[2][0], platform2_set[2][0]]
     a0 = [platform1_set[3][0], platform2_set[3][0]]
     
-    def get_local_offset():
-        anchor = Platform(f"anchor", 0, None, rigid_body_ids[0], gains, debug=False) # TODO: add achor robot mocap info
+    def get_local_offset(idx=0):
+        anchor = Platform(f"anchor", 0, None, rigid_body_ids[idx], gains, debug=False) # TODO: add achor robot mocap info
         anchor.get_location()
         
-        return anchor.xpos, anchor.ypos, anchor.attitude 
+        return anchor.xpos, anchor.ypos, anchor.attitude
+
+    local_offset = get_local_offset(0)
     
-    
-    local_offset = [0,0,0] # get_local_offset()
-    
-    print("offset:", local_offset)
-    offset_patern = [transform_frame(selected_pattern()[0], local_offset), transform_frame(selected_pattern()[1], local_offset)]
+    #print("offset:", local_offset)
+    offset_patern = [transform_frame(selected_pattern()[0], get_local_offset(0)), transform_frame(selected_pattern()[1], get_local_offset(0))]
     # offset_patern = selected_pattern
 
-    formation = [Platform(f"Robot-{i+1}", i, selected_ports[i], rigid_body_ids[i], gains, xpos=x0[i], ypos=y0[i], attitude=a0[i], transform_set=local_offset ,debug=debug) for i in range(formation_size)]
+    formation = [Platform(f"Robot-{i+1}", i, selected_ports[i], rigid_body_ids[i], gains, xpos=x0[i], ypos=y0[i], attitude=a0[i], transform_set=get_local_offset(0) ,debug=debug) for i in range(formation_size)]
     
     
     # plotting stuff
@@ -571,11 +562,11 @@ def main(selected_pattern, selected_ports, rigid_body_ids, gains, plotting=True,
     
     while True:
 
-        # formation[0].control_motion(selected_pattern, repeat=True)
         # formation[1].control_motion(selected_pattern, repeat=True)
+        # formation[0].control_motion(selected_pattern, repeat=True)
 
-        formation[0].go_to_point([-3,3,0])
-        #formation[1].go_to_point([-3,3,0])
+        formation[0].go_to_point([1,-0.4,0])
+        formation[1].go_to_point([-1.3,-0.4,0])
         
         if plotting:
             plt.pause(1e-12)
@@ -584,16 +575,16 @@ def main(selected_pattern, selected_ports, rigid_body_ids, gains, plotting=True,
 if __name__ == "__main__":
 
     # SWARM SETUP
-    motion = stay_at_position
+    motion = swarm_circle
     selected_ports = ["COM3", "COM4"] #["/dev/cu.usbserial-1440", "/dev/cu.usbserial-1450"]
     rigid_body_ids = [1, 2]
     
-    gains={ 'x' : [1, 0,0], #FIXME: TUNE
-            'y' : [1, 0,0],
-            'a' : [0.1, 0,0]}
+    gains={ 'x' : [0.5, 0.013, 0.030], #FIXME: TUNE
+            'y' : [0.5, 0.013, 0.030],
+            'a' : [0.3, 0.002,0.015]}
 
     # EXECUTE
-    main(motion, selected_ports, rigid_body_ids, gains, plotting=True, debug=False)
+    main(motion, selected_ports, rigid_body_ids, gains, plotting=False, debug=True)
         # formation[0].test_command(120) #ROBOT 1
         # formation[1].test_command(120) #ROBOT 2
 

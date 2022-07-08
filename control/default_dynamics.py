@@ -47,7 +47,7 @@ def circle_around_point(point_pos, point_vel, time, radius, period, sign=1, init
     return pos_x, pos_y, vel_x, vel_y
     
 
-def swarm_circle(f1=1, f2=2, R1=0.15, R2=0.65, P=60, dt=0.1):
+def swarm_circle(f1=1, f2=1, R1=0.4, R2=0.9, P=30, dt=0.1):
     gcd = np.gcd(f1,f2)
     end_time = gcd*P
     
@@ -67,7 +67,7 @@ def swarm_circle(f1=1, f2=2, R1=0.15, R2=0.65, P=60, dt=0.1):
     return set_1, set_2
 
 
-def calibrate_directions(size = 0.25, seq_time=1.5, dt=0.1):
+def calibrate_directions(size = 0.6, seq_time=2, dt=0.1):
     
     seq_dir = [0*np.pi, 0.5*np.pi, 1.0*np.pi, 1.5*np.pi]
     N = len(seq_dir)

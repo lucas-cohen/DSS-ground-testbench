@@ -11,6 +11,8 @@ import time
 from communication.NatNetClient import NatNetClient
 import DataDescriptions
 import MoCapData
+import numpy.linalg as npl
+import math
 
 # Make an array to store the most up to date rigid body data: id|position|rotation
 rigid_body_list = [[1, [0.0,0.0,0.0], [0.0,0.0,0.0,0.0]],
@@ -149,30 +151,50 @@ def my_parse_args(arg_list, args_dict):
     return args_dict
 
 
+#def toEulerAngles(q):
+#    x, y, z, w = q
+#    # Roll Axis
+#    sinr_cosp = 2 * (w * x + y * z)
+#    cosr_cosp = 1 - 2 * (x * x + y * y)
+#    roll = np.arctan2(sinr_cosp, cosr_cosp)
+#
+#    # Pitch Axis
+#    sinp = 2 * (w * y - z * x)
+#    if (np.abs(sinp) >= 1):
+#        pitch = np.copysign(np.pi / 2, sinp)  # use 90 degrees if out of range
+#    else:
+#        pitch = np.arcsin(sinp)
+#
+#    # Yaw Axis
+#    siny_cosp = 2 * (w * z + x * y)
+#    cosy_cosp = 1 - 2 * (y * y + z * z)
+#    yaw = np.arctan2(siny_cosp, cosy_cosp)
+#
+#    print("[r,p,y]:",round(roll,3), round(pitch,3), round(yaw,3))
+#
+#
+#    return pitch, roll, yaw
+
 def toEulerAngles(q):
-    x, y, z, w = q
-    # Roll Axis
-    sinr_cosp = 2 * (w * x + y * z)
-    cosr_cosp = 1 - 2 * (x * x + y * y)
-    roll = np.arctan2(sinr_cosp, cosr_cosp)
+    # Convert OptiTrack quaternions into Crazyflie Euler angles (degrees)
+    q = q / npl.norm(q)
+    pitch = math.atan2(
+        -2 * (q[1] * q[2] - q[0] * q[3]), q[0] ** 2 - q[1] ** 2 + q[2] ** 2 - q[3] ** 2
+    )
+    roll = math.asin(2 * (q[2] * q[3] + q[0] * q[1]))
+    yaw = (
+        -math.atan2(
+            -2 * (q[1] * q[3] - q[0] * q[2]),
+            q[0] ** 2 - q[1] ** 2 - q[2] ** 2 + q[3] ** 2,
+        )
+    )
 
-    # Pitch Axis
-    sinp = 2 * (w * y - z * x)
-    if (np.abs(sinp) >= 1):
-        pitch = np.copysign(np.pi / 2, sinp)  # use 90 degrees if out of range
+    if pitch > 0:
+        pitch = pitch - np.pi
     else:
-        pitch = np.arcsin(sinp)
-
-    # Yaw Axis
-    siny_cosp = 2 * (w * z + x * y)
-    cosy_cosp = 1 - 2 * (y * y + z * z)
-    yaw = np.arctan2(siny_cosp, cosy_cosp)
-
-    print("[r,p,y]:",round(roll,3), round(pitch,3), round(yaw,3))
-
+        pitch = pitch + np.pi
 
     return pitch, roll, yaw
-
 
 def get_body_package_data(selected_motive_body_id):
     ## Implement ith motive API
